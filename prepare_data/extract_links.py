@@ -1,8 +1,10 @@
-import xml.etree.ElementTree as ET
-import sys
 import os
+import sys
+import xml.etree.ElementTree as ET
+
 import requests
 from tqdm import tqdm
+
 
 def download_toc(url, filepath):
     if os.path.exists(filepath):

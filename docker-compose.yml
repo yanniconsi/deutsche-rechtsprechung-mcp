@@ -10,6 +10,11 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - plugins.security.disabled=false
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=ComplexPassword123!
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u admin:ComplexPassword123! https://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ulimits:
       memlock:
         soft: -1
@@ -39,7 +44,7 @@ services:
   #     - opensearch-node1
 
   mcp-server:
-    build: .
+    build: ./mcp
     container_name: mcp-server
     environment:
       - OPENSEARCH_HOST=opensearch-node1
@@ -52,17 +57,24 @@ services:
     ports:
       - 8002:8002
     depends_on:
-      - opensearch-node1
+      opensearch-node1:
+        condition: service_healthy
 
   data-preparer:
     build:
-      context: ../prepare_data
+      context: ./prepare_data
       dockerfile: Dockerfile
     container_name: data-preparer
+    restart: always
+    environment:
+      - RUN_ON_STARTUP=false
+      - MAX_WORKERS=2
     volumes:
       - ./markdown:/app/mcp/markdown
-      - prepare_data_cache:/app/prepare_data/data
+      - ./prepare_data/data:/app/prepare_data/data
+    depends_on:
+      opensearch-node1:
+        condition: service_healthy
 
 volumes:
   opensearch-data:
-  prepare_data_cache:

@@ -1,14 +1,24 @@
-import os
 import glob
 import json
+import os
 from concurrent.futures import ProcessPoolExecutor
+
 from tqdm import tqdm
 from xml_to_md import convert_xml_to_md_text
 
 EXTRACTED_DIR = "data/extracted"
 MARKDOWN_DIR = "../mcp/markdown"
-# Using ProcessPoolExecutor for CPU-bound XML parsing tasks
-MAX_WORKERS = os.cpu_count() or 4
+
+def get_safe_worker_count():
+    env_workers = os.environ.get("MAX_WORKERS")
+    if env_workers and env_workers.isdigit():
+        return int(env_workers)
+    
+    cpu_count = os.cpu_count()
+    # Use half cores by default for background tasks
+    return max(1, cpu_count // 2)
+
+MAX_WORKERS = get_safe_worker_count()
 
 def process_file(file_info):
     xml_path, md_path = file_info

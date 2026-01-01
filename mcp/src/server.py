@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 from mcp.server.fastmcp import FastMCP
 from opensearchpy import OpenSearch
 

@@ -1,16 +1,22 @@
-import os
-import time
 import glob
 import json
+import logging
+import os
+import time
+
 from opensearchpy import OpenSearch, helpers
 
 # Configuration
-OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
+OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'opensearch-node1')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR', '../markdown')
+MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR', '../mcp/markdown')
 INDEX_NAME = 'court-decisions'
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def get_opensearch_client():
     client = OpenSearch(
@@ -25,14 +31,14 @@ def get_opensearch_client():
     return client
 
 def wait_for_opensearch(client):
-    print(f"Waiting for OpenSearch at {OPENSEARCH_HOST}:{OPENSEARCH_PORT}...")
+    logger.info(f"Waiting for OpenSearch at {OPENSEARCH_HOST}:{OPENSEARCH_PORT}...")
     while True:
         try:
             if client.ping():
-                print("OpenSearch is up!")
+                logger.info("OpenSearch is up!")
                 break
         except Exception as e:
-            print(f"Waiting... ({e})")
+            logger.info(f"Waiting... ({e})")
         time.sleep(5)
 
 def create_index(client):
@@ -68,16 +74,12 @@ def create_index(client):
     
     if not client.indices.exists(index=INDEX_NAME):
         client.indices.create(index=INDEX_NAME, body=index_body)
-        print(f"Index '{INDEX_NAME}' created.")
+        logger.info(f"Index '{INDEX_NAME}' created.")
     else:
-        # Note: Ideally we should update mappings if index exists, but for simplicity we rely on re-creation or existing compat
-        print(f"Index '{INDEX_NAME}' already exists.")
+        logger.info(f"Index '{INDEX_NAME}' already exists.")
 
 def ingest_files(client):
-    print(f"Scanning files in {MARKDOWN_DIR}...")
-    # Pattern: markdown_dir/*/*.md
-    # Using glob.iglob for iterator to save memory if many files
-    # The structure is described as markdown/FOLDER/FILE.md
+    logger.info(f"Scanning files in {MARKDOWN_DIR}...")
     files = glob.iglob(os.path.join(MARKDOWN_DIR, '**', '*.md'), recursive=True)
     
     def generate_actions():
@@ -88,7 +90,6 @@ def ingest_files(client):
                 json_path = os.path.splitext(md_path)[0] + ".json"
                 
                 if not os.path.exists(json_path):
-                    # print(f"Warning: No JSON found for {md_path}")
                     continue
 
                 # Load Metadata from JSON
@@ -98,11 +99,6 @@ def ingest_files(client):
                 # Load Full Text from Markdown
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
-                
-                # Build Document
-                # Metadata keys from xml_to_md: 
-                # title, doknr, ecli, datum, aktenzeichen, gertyp, gerort, spruchkoerper, norm, vorinstanz
-                # Plus section keys: leitsatz, tenor, tatbestand, entscheidungsgruende, gruende, etc. (lowercase)
                 
                 doc = {
                     'title': metadata.get('title'),
@@ -114,8 +110,6 @@ def ingest_files(client):
                     'gericht': f"{metadata.get('gertyp', '')} {metadata.get('gerort', '')}".strip(),
                     'spruchkoerper': metadata.get('spruchkoerper'),
                     'normen': metadata.get('norm'),
-                    
-                    # Sections (keys match xml_to_md output, which are lowercase)
                     'leitsatz': metadata.get('leitsatz'),
                     'sonstosatz': metadata.get('sonstosatz'),
                     'tenor': metadata.get('tenor'),
@@ -126,8 +120,6 @@ def ingest_files(client):
                     'sonstlt': metadata.get('sonstlt'),
                 }
                 
-                # Validation / Cleanup
-                # Datum format is YYYYMMDD. If empty, remove it to avoid parse error
                 if not doc.get('datum'):
                     doc.pop('datum', None)
 
@@ -136,29 +128,28 @@ def ingest_files(client):
                     "_source": doc
                 }
                 
-                # Use DokNr as ID if available to avoid duplicates
-                if doc.get('doknr'):
-                    action["_id"] = doc['doknr']
-                
+                if not doc.get("doknr"):
+                    logger.warning(f"Skipping {md_path}: 'doknr' metadata is missing.")
+                    continue
+
+                action = {"_index": INDEX_NAME, "_id": doc["doknr"], "_source": doc}
+
                 yield action
                 count += 1
                 if count % 100 == 0:
-                    print(f"Processed {count} files...")
+                    logger.info(f"Prepared {count} documents...")
                     
             except Exception as e:
-                print(f"Error processing {md_path}: {e}")
+                logger.error(f"Error processing {md_path}: {e}")
 
-    print("Starting bulk ingestion...")
+    logger.info("Starting bulk ingestion...")
     success, failed = helpers.bulk(client, generate_actions(), stats_only=True)
-    print(f"Ingestion complete. Success: {success}, Failed: {failed}")
+    logger.info(f"Ingestion complete. Success: {success}, Failed: {failed}")
 
 if __name__ == "__main__":
-    print('starting ingestion!')
+    logger.info('Starting ingestion process!')
     client = get_opensearch_client()
     wait_for_opensearch(client)
-    
-    if client.indices.exists(index=INDEX_NAME):
-        print(f"Index '{INDEX_NAME}' already exists. Skipping ingestion.")
-    else:
-        create_index(client)
-        ingest_files(client)
+    create_index(client)
+    # Always run ingest to allow updates
+    ingest_files(client)

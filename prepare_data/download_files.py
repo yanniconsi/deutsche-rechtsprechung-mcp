@@ -1,10 +1,11 @@
 import os
-import requests
-from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
-from urllib.parse import urlparse
-import time
 import random
+import time
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
+
+import requests
+from tqdm import tqdm
 
 MAX_WORKERS = 5
 DOWNLOAD_DIR = "data/downloads"

@@ -3,6 +3,7 @@ _test/
 .DS_Store
 .adk
 data/
+_data/
 markdown/
 
 # Byte-compiled / optimized / DLL files

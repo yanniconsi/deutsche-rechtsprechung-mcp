@@ -3,3 +3,5 @@ opensearch-py
 python-dotenv
 uvicorn
 fastapi
+ruff
+

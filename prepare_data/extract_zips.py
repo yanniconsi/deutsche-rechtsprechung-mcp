@@ -1,5 +1,6 @@
 import os
 import zipfile
+
 from tqdm import tqdm
 
 DOWNLOAD_DIR = "data/downloads"

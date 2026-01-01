@@ -1,7 +1,8 @@
-import xml.etree.ElementTree as ET
-import sys
-import re
 import os
+import re
+import sys
+import xml.etree.ElementTree as ET
+
 
 def clean_text(text):
     if text:

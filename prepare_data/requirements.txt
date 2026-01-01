@@ -1,2 +1,6 @@
 requests
 tqdm
+schedule
+opensearch-py
+ruff
+
