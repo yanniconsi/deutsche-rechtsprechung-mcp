@@ -55,7 +55,7 @@ services:
       - OPENSEARCH_USER=admin
       - OPENSEARCH_PASSWORD=ComplexPassword123!
       - MARKDOWN_DIR=/markdown_data
-      - STATIC_SERVER_EXTERNAL_URL=https://rechtsprechung.share.zrok.io
+      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
     networks:
       - litellm-network
 
