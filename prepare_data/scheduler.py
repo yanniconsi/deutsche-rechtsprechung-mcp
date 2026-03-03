@@ -60,6 +60,9 @@ def run_pipeline():
     logger.info("Next run scheduled for tomorrow at 03:00.")
 
 def main():
+
+    run_on_startup = os.getenv("RUN_ON_STARTUP", "false").lower() == "true"
+
     # Schedule the job
     schedule_time = "03:00"
     schedule.every().day.at(schedule_time).do(run_pipeline)
@@ -69,8 +72,14 @@ def main():
     # Run immediately on startup for the first time?
     # Usually desirable in dev/testing, maybe configurable.
     # For now, let's run it once on startup so we don't wait 24h for the first data.
-    logger.info("Performing initial startup run...")
-    run_pipeline()
+    logger.info(f"Scheduler started. Pipeline will run daily at {schedule_time}.")
+    
+    # Only run on startup if explicitly enabled
+    if run_on_startup:
+        logger.info("RUN_ON_STARTUP is enabled. Performing initial startup run...")
+        run_pipeline()
+    else:
+        logger.info("RUN_ON_STARTUP is disabled. Waiting for scheduled run at {schedule_time}.")
 
     while True:
         schedule.run_pending()

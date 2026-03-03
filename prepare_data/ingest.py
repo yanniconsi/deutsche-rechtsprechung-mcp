@@ -67,7 +67,8 @@ def create_index(client):
                 'entscheidungsgruende': {'type': 'text', 'analyzer': 'german'},
                 'gruende': {'type': 'text', 'analyzer': 'german'},
                 'abwmeinung': {'type': 'text', 'analyzer': 'german'},
-                'sonstlt': {'type': 'text', 'analyzer': 'german'}
+                'sonstlt': {'type': 'text', 'analyzer': 'german'},
+                'source_file': {'type': 'keyword'}
             }
         }
     }
@@ -99,6 +100,10 @@ def ingest_files(client):
                 # Load Full Text from Markdown
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
+
+
+                # NEW
+                relative_path = os.path.relpath(md_path, MARKDOWN_DIR)
                 
                 doc = {
                     'title': metadata.get('title'),
@@ -118,6 +123,7 @@ def ingest_files(client):
                     'gruende': metadata.get('gruende'),
                     'abwmeinung': metadata.get('abwmeinung'),
                     'sonstlt': metadata.get('sonstlt'),
+                    'source_file': relative_path  # NEU: Relativer Pfad zur Quelldatei
                 }
                 
                 if not doc.get('datum'):

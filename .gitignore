@@ -5,6 +5,7 @@ _test/
 data/
 _data/
 markdown/
+testdata/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
