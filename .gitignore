@@ -6,6 +6,7 @@ data/
 _data/
 markdown/
 testdata/
+mcp/markdown_bw/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

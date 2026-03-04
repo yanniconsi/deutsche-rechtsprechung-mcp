@@ -21,7 +21,7 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-INDEX_NAME = 'court-decisions'
+INDEX_NAME = 'court-decisions, court-decisions-bw'
 STATIC_SERVER_EXTERNAL_URL = os.environ.get('STATIC_SERVER_EXTERNAL_URL', 'http://localhost:8003')
 # Initialize FastMCP
 mcp = FastMCP("court-decisions-mcp", stateless_http=True, host='0.0.0.0', port=8002, debug=True)
