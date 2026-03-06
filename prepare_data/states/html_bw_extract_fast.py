@@ -70,21 +70,21 @@ if ids_file.exists():
                     f"https://www.landesrecht-bw.de/bsbw/document/{doc_id}",
                     doc_id
                 ))
-    print(f"📋 {len(urls_to_process)} IDs aus urteil_ids.txt geladen")
+    print(f"{len(urls_to_process)} IDs aus urteil_ids.txt geladen")
 else:
-    print("⚠️ urteil_ids.txt nicht gefunden!")
+    print("urteil_ids.txt nicht gefunden!")
     exit(1)
 
 # Bereits vorhandene überspringen
 remaining = [(url, doc_id) for url, doc_id in urls_to_process 
              if not (OUTPUT_DIR / f"{re.sub(r'[<>:\"/\\|?*%]', '_', doc_id)}.html").exists()]
 
-print(f"⏭️  {len(urls_to_process) - len(remaining)} bereits vorhanden")
-print(f"🚀 {len(remaining)} noch zu laden mit {NUM_WORKERS} parallelen Browsern\n")
+print(f"{len(urls_to_process) - len(remaining)} bereits vorhanden")
+print(f"{len(remaining)} noch zu laden mit {NUM_WORKERS} parallelen Browsern\n")
 
 # Geschätzter Zeit
 estimated_minutes = (len(remaining) * 2.5) / NUM_WORKERS / 60
-print(f"⏱️  Geschätzte Zeit: ~{estimated_minutes:.0f} Minuten\n")
+print(f"Geschätzte Zeit: ~{estimated_minutes:.0f} Minuten\n")
 
 # Paralleles Scraping
 tasks = [(url, doc_id, i, len(remaining)) 

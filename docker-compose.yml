@@ -30,21 +30,23 @@ services:
     networks:
       - litellm-network
 
-  # opensearch-dashboards:
-  #   image: opensearchproject/opensearch-dashboards:latest
-  #   container_name: opensearch-dashboards
-  #   ports:
-  #     - 5601:5601
-  #   expose:
-  #     - "5601"
-  #   environment:
-  #     - 'OPENSEARCH_HOSTS=["https://opensearch-node1:9200"]'
-  #     - OPENSEARCH_USERNAME=admin
-  #     - OPENSEARCH_PASSWORD=ComplexPassword123!
-  #     - OPENSEARCH_SSL_VERIFICATIONMODE=none
-  #   depends_on:
-  #     opensearch-node1:
-  #       condition: service_healthy
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["https://opensearch-node1:9200"]'
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=ComplexPassword123!
+      - OPENSEARCH_SSL_VERIFICATIONMODE=none
+    networks:
+      - litellm-network
+    depends_on:
+      opensearch-node1:
+        condition: service_healthy
 
   mcp-server:
     build: ./mcp

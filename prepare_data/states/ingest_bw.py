@@ -11,7 +11,7 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BW', '../mcp/markdown_bw')
+MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BW', '../../mcp/markdown_bw')
 INDEX_NAME = 'court-decisions-bw'
 
 # Configure logging
@@ -56,8 +56,9 @@ def create_index(client):
                 'doknr': {'type': 'keyword'},
                 'ecli': {'type': 'keyword'},
                 'az': {'type': 'keyword'},
-                'datum': {'type': 'date', 'format': 'basic_date'}, # 20100114
+                'datum': {'type': 'date', 'format': 'basic_date'},
                 'gericht': {'type': 'keyword'},
+                'dokumenttyp': {'type': 'keyword'},
                 'spruchkoerper': {'type': 'keyword'},
                 'normen': {'type': 'text', 'analyzer': 'german'},
                 'leitsatz': {'type': 'text', 'analyzer': 'german'},
@@ -87,22 +88,17 @@ def ingest_files(client):
         count = 0
         for md_path in files:
             try:
-                # Construct JSON path from MD path
                 json_path = os.path.splitext(md_path)[0] + ".json"
                 
                 if not os.path.exists(json_path):
                     continue
 
-                # Load Metadata from JSON
                 with open(json_path, 'r', encoding='utf-8') as f:
                     metadata = json.load(f)
                 
-                # Load Full Text from Markdown
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
 
-
-                # NEW
                 relative_path = os.path.relpath(md_path, MARKDOWN_DIR)
                 
                 doc = {
@@ -112,7 +108,8 @@ def ingest_files(client):
                     'ecli': metadata.get('ecli'),
                     'az': metadata.get('aktenzeichen'),
                     'datum': metadata.get('datum'),
-                    'gericht': f"{metadata.get('gertyp', '')} {metadata.get('gerort', '')}".strip(),
+                    'gericht': metadata.get('gericht', ''),
+                    'dokumenttyp': metadata.get('dokumenttyp'),
                     'spruchkoerper': metadata.get('spruchkoerper'),
                     'normen': metadata.get('norm'),
                     'leitsatz': metadata.get('leitsatz'),
@@ -123,17 +120,12 @@ def ingest_files(client):
                     'gruende': metadata.get('gruende'),
                     'abwmeinung': metadata.get('abwmeinung'),
                     'sonstlt': metadata.get('sonstlt'),
-                    'source_file': relative_path  # NEU: Relativer Pfad zur Quelldatei
+                    'source_file': relative_path
                 }
                 
                 if not doc.get('datum'):
                     doc.pop('datum', None)
 
-                action = {
-                    "_index": INDEX_NAME,
-                    "_source": doc
-                }
-                
                 if not doc.get("doknr"):
                     logger.warning(f"Skipping {md_path}: 'doknr' metadata is missing.")
                     continue
@@ -157,5 +149,4 @@ if __name__ == "__main__":
     client = get_opensearch_client()
     wait_for_opensearch(client)
     create_index(client)
-    # Always run ingest to allow updates
     ingest_files(client)
