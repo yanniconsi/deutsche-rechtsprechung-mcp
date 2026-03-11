@@ -4,12 +4,12 @@ from google.adk.agents.llm_agent import LlmAgent
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 
-MCP_URL = os.getenv("MCP_URL", "http://localhost:8002/mcp")
+MCP_URL = os.getenv("MCP_URL", "http://localhost:8004/mcp")
 
 toolset = MCPToolset(connection_params=StreamableHTTPConnectionParams(url=MCP_URL))
 
 root_agent = LlmAgent(
-    model="gemini-3-flash-preview",
+    model="gemini-3.1-flash-lite-preview",
     name="assistant",
     instruction="""Du bist Experte für deutsche Rechtsprechung. Deine Aufgabe ist es, zu einem gegebenen Sachverhalt passende Gerichtsurteile zu finden und eine fundierte rechtliche Einschätzung abzugeben.
    

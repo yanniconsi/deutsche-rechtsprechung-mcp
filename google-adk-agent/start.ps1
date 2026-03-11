@@ -16,7 +16,7 @@ if (Test-Path $envFile) {
 }
 
 # MCP URL setzen
-$env:MCP_URL = "http://localhost:8002/mcp"
+$env:MCP_URL = "http://localhost:8004/mcp"
 
 Write-Host "Starting ADK Agent from google-adk-agent directory..." -ForegroundColor Cyan
 Write-Host "MCP_URL: $($env:MCP_URL)" -ForegroundColor Gray

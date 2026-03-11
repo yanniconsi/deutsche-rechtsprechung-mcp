@@ -48,21 +48,36 @@ services:
       opensearch-node1:
         condition: service_healthy
 
-  mcp-server:
+  mcp-server-bw:
     build: ./mcp
-    container_name: mcp-server
+    container_name: mcp-server-bw
     environment:
+      - INDEX_NAME=court-decisions-bw
       - OPENSEARCH_HOST=opensearch-node1
       - OPENSEARCH_PORT=9200
       - OPENSEARCH_USER=admin
       - OPENSEARCH_PASSWORD=ComplexPassword123!
-      - MARKDOWN_DIR=/markdown_data
       - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
     networks:
       - litellm-network
+    ports:
+      - 8004:8002
+    depends_on:
+      opensearch-node1:
+        condition: service_healthy
 
-    volumes:
-      - ./markdown:/markdown_data
+  mcp-server-bgh:
+    build: ./mcp
+    container_name: mcp-server-bgh
+    environment:
+      - INDEX_NAME=court-decisions
+      - OPENSEARCH_HOST=opensearch-node1
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=ComplexPassword123!
+      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
+    networks:
+      - litellm-network
     ports:
       - 8002:8002
     depends_on:
