@@ -11,7 +11,7 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'opensearch-node1')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR', '../mcp/markdown')
+MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR', '../mcp/data/bgh/markdown')
 INDEX_NAME = 'court-decisions'
 
 # Configure logging

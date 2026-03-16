@@ -83,6 +83,8 @@ def search_decisions(query: str, limit: int = 10) -> str:
             gericht = source.get('gericht', 'N/A')
             normen = source.get('normen', 'N/A')
             source_file = source.get('source_file', 'N/A')
+            if source_file != 'N/A':
+                source_file = source_file.replace("\\", "/")
             
             # URL generieren
             decision_url = f"{STATIC_SERVER_EXTERNAL_URL}/decisions/{source_file}" if source_file != 'N/A' else None
@@ -157,7 +159,9 @@ def get_decision_by_doknr(doknr: str) -> str:
         # Return the first match (should be unique)
         source = hits[0]['_source']
         source_file = source.get('source_file', 'N/A')
-        
+        if source_file != 'N/A':
+            source_file = source_file.replace("\\", "/")
+            
         # URL generieren
         decision_url = f"{STATIC_SERVER_EXTERNAL_URL}/decisions/{source_file}" if source_file != 'N/A' else None
         

@@ -19,13 +19,13 @@ logger = logging.getLogger("DataPipelineScheduler")
 def run_pipeline():
     logger.info("Starting scheduled data preparation pipeline...")
     start_time = time.time()
-    
+        
     steps = [
-        ("Extracting links", ["python", "extract_links.py"]),
-        ("Downloading files", ["python", "download_files.py"]),
-        ("Extracting ZIPs", ["python", "extract_zips.py"]),
-        ("Converting to Markdown", ["python", "convert_all_to_md.py"]),
-        ("Ingesting to OpenSearch", ["python", "ingest.py"])
+        ("Extracting links",       ["python", "states/bgh/extract_links.py"]),
+        ("Downloading files",      ["python", "states/bgh/download_files.py"]),
+        ("Extracting ZIPs",        ["python", "states/bgh/extract_zips.py"]),
+        ("Converting to Markdown", ["python", "states/bgh/convert_all_to_md.py"]),
+        ("Ingesting to OpenSearch",["python", "ingest.py"])
     ]
 
     # Special handling: Remove TOC to force update

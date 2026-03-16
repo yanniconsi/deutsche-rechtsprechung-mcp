@@ -66,8 +66,8 @@ def extract_metadata_from_markdown(md_text, filename):
     
     return metadata
 
-base_output_dir = Path('../mcp/markdown_bw')
-base_output_dir.mkdir(exist_ok=True)
+base_output_dir = Path('../mcp/data/bw/markdown')
+testdata_dir = Path('../mcp/data/bw/raw')
 
 testdata_dir = Path('testdata')
 for html_file in testdata_dir.glob('*.html'):

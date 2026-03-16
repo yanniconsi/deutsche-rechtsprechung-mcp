@@ -7,7 +7,7 @@ services:
       - node.name=opensearch-node1
       - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"  
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
       - plugins.security.disabled=false
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=ComplexPassword123!
     healthcheck:
@@ -28,25 +28,7 @@ services:
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     networks:
-      - litellm-network
-
-  opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:latest
-    container_name: opensearch-dashboards
-    ports:
-      - 5601:5601
-    expose:
-      - "5601"
-    environment:
-      - 'OPENSEARCH_HOSTS=["https://opensearch-node1:9200"]'
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=ComplexPassword123!
-      - OPENSEARCH_SSL_VERIFICATIONMODE=none
-    networks:
-      - litellm-network
-    depends_on:
-      opensearch-node1:
-        condition: service_healthy
+      - app-network
 
   mcp-server-bw:
     build: ./mcp
@@ -59,7 +41,7 @@ services:
       - OPENSEARCH_PASSWORD=ComplexPassword123!
       - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
     networks:
-      - litellm-network
+      - app-network
     ports:
       - 8004:8002
     depends_on:
@@ -77,7 +59,7 @@ services:
       - OPENSEARCH_PASSWORD=ComplexPassword123!
       - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
     networks:
-      - litellm-network
+      - app-network
     ports:
       - 8002:8002
     depends_on:
@@ -92,12 +74,14 @@ services:
     ports:
       - "8003:8003"
     volumes:
-      - ./prepare_data/data/extracted:/app/prepare_data/data/extracted:ro
+      - ./mcp/data/bgh/raw:/app/mcp/data/bgh/raw:ro
+      - ./mcp/data/bw/raw:/app/mcp/data/bw/raw:ro   # <-- NEU: BW Volume hinzufügen
     environment:
-      - XML_DATA_DIR=/app/prepare_data/data/extracted  
+      - XML_DATA_DIR=/app/mcp/data/bgh/raw
+      - BW_RAW_DIR=/app/mcp/data/bw/raw             # <-- NEU: BW Environment Variable
     command: python src/static_server.py
     networks:
-      - litellm-network
+      - app-network
 
   data-preparer:
     build:
@@ -109,56 +93,20 @@ services:
       - RUN_ON_STARTUP=false
       - MAX_WORKERS=2
     volumes:
-      - ./mcp/markdown:/app/mcp/markdown
+      - ./mcp/data/bgh/markdown:/app/mcp/data/bgh/markdown
+      - ./mcp/data/bgh/raw:/app/mcp/data/bgh/raw
+      - ./mcp/data/bw/markdown:/app/mcp/data/bw/markdown
+      - ./mcp/data/bw/raw:/app/mcp/data/bw/raw
       - ./prepare_data/data:/app/prepare_data/data
     depends_on:
       opensearch-node1:
         condition: service_healthy
     networks:
-      - litellm-network
-
-  litellm-db:
-    image: postgres:15
-    container_name: litellm-db
-    networks:
-      - litellm-network
-    environment:
-      POSTGRES_DB: litellm
-      POSTGRES_USER: llmproxy
-      POSTGRES_PASSWORD: dbpassword9090
-    volumes:
-      - litellm-db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U llmproxy -d litellm"]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-      start_period: 15s
-
-  litellm-proxy:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm-proxy
-    restart: on-failure:5
-    networks:
-      - litellm-network
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./own/LiteLLM/config.yaml:/app/config.yaml
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - DATABASE_URL=postgresql://llmproxy:dbpassword9090@litellm-db:5432/litellm
-    command: ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
-    depends_on:
-      litellm-db:
-        condition: service_healthy
+      - app-network
 
 networks:
-  litellm-network:
+  app-network:
     driver: bridge
 
 volumes:
   opensearch-data:
-  litellm-db-data:

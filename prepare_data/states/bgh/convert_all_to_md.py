@@ -6,8 +6,8 @@ from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 from xml_to_md import convert_xml_to_md_text
 
-EXTRACTED_DIR = "data/extracted"
-MARKDOWN_DIR = "../mcp/markdown"
+EXTRACTED_DIR = "../mcp/data/bgh/raw"
+MARKDOWN_DIR = "../mcp/data/bgh/markdown"
 
 def get_safe_worker_count():
     env_workers = os.environ.get("MAX_WORKERS")

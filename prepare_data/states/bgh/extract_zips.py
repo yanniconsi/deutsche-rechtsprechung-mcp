@@ -4,7 +4,7 @@ import zipfile
 from tqdm import tqdm
 
 DOWNLOAD_DIR = "data/downloads"
-EXTRACT_DIR = "data/extracted"
+EXTRACT_DIR = "../mcp/data/bgh/raw"
 
 def extract_all_zips():
     if not os.path.exists(DOWNLOAD_DIR):

@@ -11,7 +11,7 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BW', '../../mcp/markdown_bw')
+MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BW', '../mcp/data/bw/markdown')
 INDEX_NAME = 'court-decisions-bw'
 
 # Configure logging
@@ -99,7 +99,10 @@ def ingest_files(client):
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
 
-                relative_path = os.path.relpath(md_path, MARKDOWN_DIR)
+                # --- GEÄNDERT: source_file direkt festlegen ---
+                # Aus Metadaten die Original-Quelle holen (BW raw ist flach: *.html)
+                source_file_raw = metadata.get('source_file') or os.path.basename(md_path)
+                source_file = os.path.basename(source_file_raw).replace("\\", "/")
                 
                 doc = {
                     'title': metadata.get('title'),
@@ -120,7 +123,7 @@ def ingest_files(client):
                     'gruende': metadata.get('gruende'),
                     'abwmeinung': metadata.get('abwmeinung'),
                     'sonstlt': metadata.get('sonstlt'),
-                    'source_file': relative_path
+                    'source_file': source_file # --- GEÄNDERT ---
                 }
                 
                 if not doc.get('datum'):
