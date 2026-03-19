@@ -30,23 +30,23 @@ services:
     networks:
       - app-network
 
-  mcp-server-bw:
-    build: ./mcp
-    container_name: mcp-server-bw
-    environment:
-      - INDEX_NAME=court-decisions-bw
-      - OPENSEARCH_HOST=opensearch-node1
-      - OPENSEARCH_PORT=9200
-      - OPENSEARCH_USER=admin
-      - OPENSEARCH_PASSWORD=ComplexPassword123!
-      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
-    networks:
-      - app-network
-    ports:
-      - 8004:8002
-    depends_on:
-      opensearch-node1:
-        condition: service_healthy
+  # mcp-server-bw:
+  #   build: ./mcp
+  #   container_name: mcp-server-bw
+  #   environment:
+  #     - INDEX_NAME=court-decisions-bw
+  #     - OPENSEARCH_HOST=opensearch-node1
+  #     - OPENSEARCH_PORT=9200
+  #     - OPENSEARCH_USER=admin
+  #     - OPENSEARCH_PASSWORD=ComplexPassword123!
+  #     - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
+  #   networks:
+  #     - app-network
+  #   ports:
+  #     - 8004:8002
+  #   depends_on:
+  #     opensearch-node1:
+  #       condition: service_healthy
 
   mcp-server-bgh:
     build: ./mcp
@@ -66,6 +66,25 @@ services:
       opensearch-node1:
         condition: service_healthy
 
+  mcp-server-states:
+    build: ./mcp
+    container_name: mcp-server-states
+    environment:
+      # Sucht im neuen, gemeinsamen Index
+      - INDEX_NAME=court-decisions-states
+      - OPENSEARCH_HOST=opensearch-node1
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=ComplexPassword123!
+      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
+    networks:
+      - app-network
+    ports:
+      - 8004:8002  # Der Port, unter dem dein LLM diesen Server anspricht
+    depends_on:
+      opensearch-node1:
+        condition: service_healthy
+
   static-server:
     build:
       context: ./mcp
@@ -74,11 +93,11 @@ services:
     ports:
       - "8003:8003"
     volumes:
-      - ./mcp/data/bgh/raw:/app/mcp/data/bgh/raw:ro
-      - ./mcp/data/bw/raw:/app/mcp/data/bw/raw:ro   # <-- NEU: BW Volume hinzufügen
+      # Wir mounten einfach den gesamten data-Ordner (BGH, BW, BY, etc. sind alle hier drin)
+      - ./mcp/data:/app/mcp/data:ro
     environment:
-      - XML_DATA_DIR=/app/mcp/data/bgh/raw
-      - BW_RAW_DIR=/app/mcp/data/bw/raw             # <-- NEU: BW Environment Variable
+      # Wir geben dem Server nur noch das Basis-Verzeichnis mit
+      - BASE_DATA_DIR=/app/mcp/data 
     command: python src/static_server.py
     networks:
       - app-network
@@ -93,10 +112,7 @@ services:
       - RUN_ON_STARTUP=false
       - MAX_WORKERS=2
     volumes:
-      - ./mcp/data/bgh/markdown:/app/mcp/data/bgh/markdown
-      - ./mcp/data/bgh/raw:/app/mcp/data/bgh/raw
-      - ./mcp/data/bw/markdown:/app/mcp/data/bw/markdown
-      - ./mcp/data/bw/raw:/app/mcp/data/bw/raw
+      - ./mcp/data:/app/mcp/data:ro
       - ./prepare_data/data:/app/prepare_data/data
     depends_on:
       opensearch-node1:

@@ -3,7 +3,6 @@ import os
 import logging
 from datetime import datetime
 
-
 from mcp.server.fastmcp import FastMCP
 from opensearchpy import OpenSearch
 
@@ -21,8 +20,10 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-INDEX_NAME = os.environ.get('INDEX_NAME', 'court-decisions-bw')
+# Dieser Such-Index sollte alle Staaten enthalten (von deinem neuen Ingest-Skript)
+INDEX_NAME = os.environ.get('INDEX_NAME', 'court-decisions-states')
 STATIC_SERVER_EXTERNAL_URL = os.environ.get('STATIC_SERVER_EXTERNAL_URL', 'http://localhost:8003')
+
 # Initialize FastMCP
 mcp = FastMCP("court-decisions-mcp", stateless_http=True, host='0.0.0.0', port=8002, debug=True)
 
@@ -37,30 +38,46 @@ def get_opensearch_client():
         ssl_show_warn=False
     )
 
+# --- GEÄNDERT: Neuer Parameter 'states' hinzugefügt ---
 @mcp.tool()
-def search_decisions(query: str, limit: int = 10) -> str:
+def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> str:
     """Search for German court decisions by text or metadata.
     
     Args:
         query: The search query (e.g. 'Insolvenzverfahren', 'BGH IX ZB 72/08').
+        states: Optional list of state abbreviations to restrict the search (e.g. ['bw', 'by']). If empty, searches all states.
         limit: Number of results to return (default 10).
     """
-    print(f"[PRINT] search_decisions called with query='{query}'", flush=True)
+    print(f"[PRINT] search_decisions called with query='{query}', states='{states}'", flush=True)
 
     client = get_opensearch_client()
     
-    # Simple multi-match query
+    # Basis Multi-Match Query (wie bisher)
+    base_query = {
+        "multi_match": {
+            "query": query,
+            "fields": [
+                "title^2", "leitsatz^2", "full_text", 
+                "az", "doknr", "normen"
+            ]
+        }
+    }
+    
+    # --- GEÄNDERT: Bool-Query bauen um Filter zu unterstützen ---
+    query_body = {"bool": {"must": base_query}}
+    
+    # Wenn das LLM spezifische Staaten übergeben hat, wende den Filter an
+    if states:
+        # Säubere die Eingabe (Kleinschreibung, Leerzeichen entfernen)
+        clean_states = [s.strip().lower() for s in states if isinstance(s, str)]
+        if clean_states:
+            query_body["bool"]["filter"] = {
+                "terms": {"state": clean_states}
+            }
+            
     search_body = {
         "size": limit,
-        "query": {
-            "multi_match": {
-                "query": query,
-                "fields": [
-                    "title^2", "leitsatz^2", "full_text", 
-                    "az", "doknr", "normen"
-                ]
-            }
-        },
+        "query": query_body,
         "highlight": {
             "fields": {
                 "full_text": {}
@@ -82,7 +99,10 @@ def search_decisions(query: str, limit: int = 10) -> str:
             datum = source.get('datum', 'N/A')
             gericht = source.get('gericht', 'N/A')
             normen = source.get('normen', 'N/A')
+            # Es hilft dem LLM oft zu wissen, woher das Urteil stammt
+            state = source.get('state', 'N/A') 
             source_file = source.get('source_file', 'N/A')
+            
             if source_file != 'N/A':
                 source_file = source_file.replace("\\", "/")
             
@@ -103,11 +123,12 @@ def search_decisions(query: str, limit: int = 10) -> str:
                 "normen": normen,
                 "doknr": doknr,
                 "date": datum,
+                "state": state, # NEU: Bundesland im Ergebnis anzeigen
                 "score": score,
                 "snippet": snippet,
                 "source": source_file,
-                "url": decision_url,  # NEU: Klickbare URL
-                "resource_uri": f"decision://{doknr}"  # MCP Resource URI
+                "url": decision_url, 
+                "resource_uri": f"decision://{doknr}" 
 
             })
         
@@ -129,6 +150,7 @@ def search_decisions(query: str, limit: int = 10) -> str:
     except Exception as e:
         logger.error(f"Error in search_decisions: {e}", exc_info=True)
         return f"Error searching OpenSearch: {str(e)}"
+
 
 @mcp.tool()
 def get_decision_by_doknr(doknr: str) -> str:

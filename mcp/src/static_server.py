@@ -340,59 +340,90 @@ def parse_bw_html_to_html(html_path):
 # Route
 # ---------------------------------------------------------------------------
 
+import os
+from flask import Flask, render_template_string, abort
+import logging
+
+# ... [Deine existierenden Parse-Funktionen parse_xml_to_html und parse_bw_html_to_html bleiben exakt gleich] ...
+
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
+# Neues generisches Verzeichnis (in docker-compose.yml als /app/mcp/data gemountet)
+BASE_DATA_DIR = os.environ.get('BASE_DATA_DIR', '/app/mcp/data')
+
 @app.route('/decisions/<path:filepath>')
 def serve_decision(filepath):
+    # Security und Säuberung
     filepath = filepath.replace('..', '').strip('/')
-
-    # BW: Datei endet auf .html
-    if filepath.endswith('.html'):
-        doc_id = os.path.basename(filepath)
-        html_path = os.path.join(BW_RAW_DIR, doc_id)
-        logging.info(f"Accessing BW file: {html_path}")
-
+    
+    # Der Server erhält z.B. "bw/xyz.html" oder "bgh/xyz.xml"
+    # Wenn der alte MCP-Server "markdown/xyz.md" schickt, passen wir das an
+    if filepath.startswith('markdown/'):
+        filepath = filepath.replace('markdown/', 'bgh/', 1)
+    
+    parts = filepath.split('/')
+    if len(parts) < 2:
+        logging.error(f"Invalid filepath format: {filepath}")
+        abort(404)
+        
+    state_or_court = parts[0]  # z.B. "bw", "by", "bgh"
+    
+    # Logik für den BGH (XML-basiert, oft im Unterordner)
+    if state_or_court == 'bgh':
+        filename = parts[-1]
+        
+        # BGH-Spezialfall: Aus .md eine .xml Anforderung machen
+        if filename.endswith('.md'):
+            filename = filename[:-3] + '.xml'
+            
+        doc_id = filename.replace('.xml', '')
+        
+        # BGH Dateien liegen oft als in einem Ordner der gleich heißt wie die Datei: bgh/raw/KARE123/KARE123.xml
+        xml_path = os.path.join(BASE_DATA_DIR, 'bgh', 'raw', doc_id, f"{doc_id}.xml")
+        
+        # Fallback auf flache Hierarchie: bgh/raw/KARE123.xml
+        if not os.path.exists(xml_path):
+            xml_path = os.path.join(BASE_DATA_DIR, 'bgh', 'raw', filename)
+            
+        logging.info(f"Accessing BGH file: {xml_path}")
+        
+        if not os.path.exists(xml_path):
+            logging.error(f"File not found: {xml_path}")
+            abort(404)
+            
+        try:
+            html_content = parse_xml_to_html(xml_path)
+            return render_template_string(TEMPLATE, content=html_content, filename=filename)
+        except Exception as e:
+            logging.error(f"Error parsing BGH XML: {str(e)}")
+            abort(500)
+            
+    # Logik für alle Bundesländer (HTML-basiert, flache Struktur)
+    else:
+        # Hier landet "bw", "by", etc.
+        filename = parts[-1]
+        # Pfad: BASE_DATA_DIR / bw / raw / datei.html
+        html_path = os.path.join(BASE_DATA_DIR, state_or_court, 'raw', filename)
+        
+        logging.info(f"Accessing State ({state_or_court}) file: {html_path}")
+        
         if not os.path.exists(html_path):
             logging.error(f"File not found: {html_path}")
             abort(404)
-
+            
         try:
+            # Wir nutzen den bestehenden HTML-Parser. 
+            # (Solange BY, BB etc. die gleiche juris-Struktur haben wie BW, funktioniert das perfekt)
             html_content = parse_bw_html_to_html(html_path)
-            filename = doc_id
             return render_template_string(TEMPLATE, content=html_content, filename=filename)
         except Exception as e:
-            logging.error(f"Error: {str(e)}")
+            logging.error(f"Error parsing State HTML: {str(e)}")
             abort(500)
-
-    # BGH: XML-basiert
-    if filepath.startswith('markdown/'):
-        filepath = filepath[9:]
-    if filepath.endswith('.md'):
-        filepath = filepath[:-3] + '.xml'
-
-    if not filepath.endswith('.xml'):
-        doc_id = filepath.strip('/')
-        xml_path = os.path.join(XML_DATA_DIR, doc_id, f"{doc_id}.xml")
-    else:
-        xml_path = os.path.join(XML_DATA_DIR, filepath)
-
-    logging.info(f"Accessing BGH file: {xml_path}")
-
-    if not os.path.exists(xml_path):
-        logging.error(f"File not found: {xml_path}")
-        abort(404)
-
-    try:
-        html_content = parse_xml_to_html(xml_path)
-        filename = os.path.basename(filepath)
-        return render_template_string(TEMPLATE, content=html_content, filename=filename)
-    except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        abort(500)
-
 
 @app.route('/health')
 def health():
     return {"status": "ok", "service": "static-server"}
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8003, debug=True)
