@@ -11,8 +11,8 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BW', '../mcp/data/bw/markdown')
-INDEX_NAME = 'court-decisions-bw'
+MARKDOWN_DIR = os.environ.get('MARKDOWN_DIR_BB', '../mcp/data/bb/markdown')
+INDEX_NAME = 'court-decisions-bb'
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -99,8 +99,7 @@ def ingest_files(client):
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
 
-                # --- GEÄNDERT: source_file direkt festlegen ---
-                # Aus Metadaten die Original-Quelle holen (BW raw ist flach: *.html)
+                # Aus Metadaten die Original-Quelle holen
                 source_file_raw = metadata.get('source_file') or os.path.basename(md_path)
                 source_file = os.path.basename(source_file_raw).replace("\\", "/")
                 
@@ -148,7 +147,7 @@ def ingest_files(client):
     logger.info(f"Ingestion complete. Success: {success}, Failed: {failed}")
 
 if __name__ == "__main__":
-    logger.info('Starting ingestion process!')
+    logger.info('Starting ingestion process for BB!')
     client = get_opensearch_client()
     wait_for_opensearch(client)
     create_index(client)
