@@ -29,6 +29,7 @@ Die Pipeline besteht aus folgenden Python-Skripten (Orchestrierung + Provider + 
 ## Datenstruktur (Docker Volumes)
 
 *   `pipeline/providers/bgh/data`: Persistenter Cache für BGH-TOC/Links/ZIP-Downloads (z.B. `downloads/`).
+*   `pipeline/providers/states/data`: Optionale Zwischenablage/Exporte für den States-Import (z.B. `states_pages_filtered.csv`).
 *   `mcp/data/bgh/raw`: Entpackte BGH-XMLs.
 *   `mcp/data/bgh/markdown`: Konvertierte BGH-Markdown + JSON-Metadaten.
 *   `mcp/data/<state>/raw`: Roh-HTML pro Bundesland (z.B. `bw/raw`).

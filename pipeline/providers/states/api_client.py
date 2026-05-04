@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from pipeline.common.config import WEBSCRAPER_URL, WEBSCRAPER_AUTH, BGH_DATA_DIR
+from pipeline.common.config import WEBSCRAPER_URL, WEBSCRAPER_AUTH, STATES_DATA_DIR
 
 load_dotenv()
 
@@ -55,8 +55,8 @@ if not df.empty:
         mask_keep = (~mask_is_bw) | (mask_is_bw & mask_has_re_in_url)
         df_filtered = df[mask_keep]
 
-        BGH_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        csv_path = BGH_DATA_DIR / "db_filtered.csv"
+        STATES_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        csv_path = STATES_DATA_DIR / "states_pages_filtered.csv"
 
         df_filtered.to_csv(csv_path, index=False, encoding='utf-8')
         print(f"{len(df_filtered)} Datensätze in '{csv_path}' gespeichert.")

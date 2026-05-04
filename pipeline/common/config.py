@@ -20,6 +20,9 @@ MCP_DATA_DIR = PROJECT_ROOT / "mcp" / "data"
 # BGH Spezifische Daten (ZIP, XML, Downloads)
 BGH_DATA_DIR = PIPELINE_DIR / "providers" / "bgh" / "data"
 
+# States Provider Daten (z.B. Exporte aus einem externen Scraper/DB-Service)
+STATES_DATA_DIR = PIPELINE_DIR / "providers" / "states" / "data"
+
 # Hilfsfunktion, um Pfade für ein bestimmtes Bundesland zu bekommen
 def get_state_data_dir(state_code: str, data_type: str = "raw") -> Path:
     """
