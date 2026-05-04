@@ -3,8 +3,10 @@ import zipfile
 
 from tqdm import tqdm
 
-DOWNLOAD_DIR = "data/downloads"
-EXTRACT_DIR = "../mcp/data/bgh/raw"
+from pipeline.common.config import BGH_DATA_DIR, get_state_data_dir
+
+DOWNLOAD_DIR = BGH_DATA_DIR / "downloads"
+EXTRACT_DIR = get_state_data_dir("bgh", "raw")
 
 def extract_all_zips():
     if not os.path.exists(DOWNLOAD_DIR):

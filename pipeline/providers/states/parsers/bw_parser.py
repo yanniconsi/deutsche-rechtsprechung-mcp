@@ -4,6 +4,7 @@ import re
 import json
 from pathlib import Path
 from datetime import datetime
+from pipeline.common.config import get_state_data_dir
 
 def extract_metadata_from_markdown(md_text, filename):
     """
@@ -66,10 +67,9 @@ def extract_metadata_from_markdown(md_text, filename):
     
     return metadata
 
-base_output_dir = Path('../mcp/data/bw/markdown')
-testdata_dir = Path('../mcp/data/bw/raw')
+base_output_dir = get_state_data_dir("bw", "markdown")
+testdata_dir = get_state_data_dir("bw", "raw")
 
-testdata_dir = Path('testdata')
 for html_file in testdata_dir.glob('*.html'):
     with open(html_file, 'r', encoding='utf-8') as f:
         html_content = f.read()

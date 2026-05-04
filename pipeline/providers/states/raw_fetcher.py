@@ -2,9 +2,10 @@ import os
 import urllib.parse
 from pathlib import Path
 import pandas as pd
+from pipeline.common.config import BGH_DATA_DIR, MCP_DATA_DIR
 
-df = pd.read_csv("data/db_filtered.csv")
-base_data_path = Path("../mcp/data")
+df = pd.read_csv(BGH_DATA_DIR / "db_filtered.csv")
+base_data_path = MCP_DATA_DIR
 
 gespeichert_count = 0
 

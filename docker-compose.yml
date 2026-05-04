@@ -104,16 +104,18 @@ services:
 
   data-preparer:
     build:
-      context: ./prepare_data
+      context: ./pipeline
       dockerfile: Dockerfile
     container_name: data-preparer
-    restart: always
+    profiles:          # <-- Das ist der Trick!
+      - pipelinerun
+    env_file:
+      - .env
     environment:
-      - RUN_ON_STARTUP=false
+      - RUN_ONCE=true  # Beendet sich, wenn er einmal durchlief
       - MAX_WORKERS=2
     volumes:
-      - ./mcp/data:/app/mcp/data:ro
-      - ./prepare_data/data:/app/prepare_data/data
+      - .:/app
     depends_on:
       opensearch-node1:
         condition: service_healthy

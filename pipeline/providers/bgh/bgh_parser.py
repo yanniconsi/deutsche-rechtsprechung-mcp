@@ -6,8 +6,10 @@ from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 from xml_to_md import convert_xml_to_md_text
 
-EXTRACTED_DIR = "../mcp/data/bgh/raw"
-MARKDOWN_DIR = "../mcp/data/bgh/markdown"
+from pipeline.common.config import get_state_data_dir
+
+EXTRACTED_DIR = get_state_data_dir("bgh", "raw")
+MARKDOWN_DIR = get_state_data_dir("bgh", "markdown")
 
 def get_safe_worker_count():
     env_workers = os.environ.get("MAX_WORKERS")

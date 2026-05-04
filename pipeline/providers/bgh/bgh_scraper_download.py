@@ -3,13 +3,15 @@ import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
+from pipeline.common.config import BGH_DATA_DIR
+
 
 import requests
 from tqdm import tqdm
 
 MAX_WORKERS = 5
-DOWNLOAD_DIR = "data/downloads"
-LINKS_FILE = "data/links.txt"
+DOWNLOAD_DIR = os.path.join(BGH_DATA_DIR, "downloads")
+LINKS_FILE = os.path.join(BGH_DATA_DIR, "links.txt")
 MAX_RETRIES = 3
 
 def download_url(url):

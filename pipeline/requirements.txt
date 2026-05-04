@@ -1,0 +1,10 @@
+requests
+tqdm
+schedule
+opensearch-py
+ruff
+loguru
+python-dotenv
+pandas
+beautifulsoup4
+markdownify

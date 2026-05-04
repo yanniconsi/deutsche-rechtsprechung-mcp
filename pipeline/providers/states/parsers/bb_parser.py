@@ -3,6 +3,9 @@ from markdownify import markdownify as md
 import json
 import re
 from pathlib import Path
+from pipeline.common.config import get_state_data_dir
+
+
 
 def extract_metadata_bb(html_content, md_text, filename):
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -78,10 +81,8 @@ def assign_metadata_bb(metadata_dict, key, val):
 
 
 # --- Ausführung ---
-base_output_dir = Path('../../../mcp/data/bb/markdown')
-testdata_dir = Path('../../../mcp/data/bb/raw')
-
-base_output_dir.mkdir(parents=True, exist_ok=True)
+base_output_dir = get_state_data_dir("bb", "markdown")
+testdata_dir = get_state_data_dir("bb", "raw")
 
 for html_file in testdata_dir.glob('*.html'):
     with open(html_file, 'r', encoding='utf-8') as f:

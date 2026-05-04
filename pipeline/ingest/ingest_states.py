@@ -17,7 +17,7 @@ BASE_DATA_DIR = os.environ.get('BASE_DATA_DIR', '../mcp/data')
 INDEX_NAME = 'court-decisions-states'
 
 # Ordner, die bei der Iteration übersprungen werden sollen
-EXCLUDE_DIRS = ['bgh']
+EXCLUDE_DIRS = ['bgh', "bw"]
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

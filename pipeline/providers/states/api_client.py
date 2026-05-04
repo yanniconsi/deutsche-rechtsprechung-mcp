@@ -2,13 +2,14 @@ import os
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from pipeline.common.config import WEBSCRAPER_URL, WEBSCRAPER_AUTH, BGH_DATA_DIR
 
 load_dotenv()
 
 class ScraperDataProcessor:
     def __init__(self):
-        self.base_url = os.getenv("WEBSCRAPER_URL")
-        self.auth_token = os.getenv("WEBSCRAPER_AUTH")
+        self.base_url = WEBSCRAPER_URL
+        self.auth_token = WEBSCRAPER_AUTH
         self.headers = {
             "Authorization": self.auth_token,
             "Content-Type": "application/json"
@@ -54,7 +55,10 @@ if not df.empty:
         mask_keep = (~mask_is_bw) | (mask_is_bw & mask_has_re_in_url)
         df_filtered = df[mask_keep]
 
-        df_filtered.to_csv("db_filtered.csv", index=False, encoding='utf-8')
-        print(f"{len(df_filtered)} Datensätze in 'db_filtered.csv' gespeichert.")
+        BGH_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        csv_path = BGH_DATA_DIR / "db_filtered.csv"
+
+        df_filtered.to_csv(csv_path, index=False, encoding='utf-8')
+        print(f"{len(df_filtered)} Datensätze in '{csv_path}' gespeichert.")
 else:
     print("Der DataFrame ist leer.")
