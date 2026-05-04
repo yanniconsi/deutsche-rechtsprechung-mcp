@@ -10,6 +10,7 @@ COPY src/ src/
 COPY start.sh .
 RUN chmod +x start.sh
 
-EXPOSE 8000
+EXPOSE 8002
+EXPOSE 8003
 
 CMD ["python", "src/server.py"]

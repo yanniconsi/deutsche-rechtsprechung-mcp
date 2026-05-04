@@ -7,7 +7,7 @@ import time
 from opensearchpy import OpenSearch, helpers
 
 # Configuration
-OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
+OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'opensearch-node1')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
@@ -17,7 +17,7 @@ BASE_DATA_DIR = os.environ.get('BASE_DATA_DIR', '../mcp/data')
 INDEX_NAME = 'court-decisions-states'
 
 # Ordner, die bei der Iteration übersprungen werden sollen
-EXCLUDE_DIRS = ['bgh', "bw"]
+EXCLUDE_DIRS = ["bgh"]
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

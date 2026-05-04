@@ -22,7 +22,15 @@ OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
 # Dieser Such-Index sollte alle Staaten enthalten (von deinem neuen Ingest-Skript)
 INDEX_NAME = os.environ.get('INDEX_NAME', 'court-decisions-states')
-STATIC_SERVER_EXTERNAL_URL = os.environ.get('STATIC_SERVER_EXTERNAL_URL', 'http://localhost:8003')
+STATIC_SERVER_EXTERNAL_URL = os.environ.get('STATIC_SERVER_EXTERNAL_URL') or 'http://localhost:8003'
+
+
+def _state_filter_enabled() -> bool:
+    allow = os.environ.get("ALLOW_STATE_FILTER")
+    if allow is not None:
+        return allow.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+    return "states" in (INDEX_NAME or "").lower()
 
 # Initialize FastMCP
 mcp = FastMCP("court-decisions-mcp", stateless_http=True, host='0.0.0.0', port=8002, debug=True)
@@ -67,7 +75,7 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
     query_body = {"bool": {"must": base_query}}
     
     # Wenn das LLM spezifische Staaten übergeben hat, wende den Filter an
-    if states:
+    if states and _state_filter_enabled():
         # Säubere die Eingabe (Kleinschreibung, Leerzeichen entfernen)
         clean_states = [s.strip().lower() for s in states if isinstance(s, str)]
         if clean_states:

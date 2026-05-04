@@ -4,7 +4,12 @@ Dieses Verzeichnis enthält die automatisierte Pipeline zum Beschaffen, Aufberei
 
 ## Architektur
 
-Die Pipeline läuft in einem eigenen Docker-Container (`data-preparer`) und wird von einem Scheduler gesteuert. Der Prozess läuft **einmal täglich um 03:00 Uhr** und führt folgende Schritte sequenziell aus:
+Die Pipeline läuft in einem eigenen Docker-Container (`data-preparer`) und wird von einem Scheduler (`pipeline/scheduler.py`) gesteuert.
+
+- Standardbetrieb: täglich um **03:00 Uhr** (konfigurierbar über `RUN_AT`).
+- One-shot: `RUN_ONCE=true` führt genau einen Lauf aus und beendet den Container.
+
+Der Prozess führt folgende Schritte sequenziell aus:
 
 1.  **Inhaltsverzeichnis aktualisieren**: Löscht das alte TOC und lädt `rii-toc.xml` neu herunter.
 2.  **Downloads**: Lädt neue ZIP-Dateien herunter (existierende Dateien werden übersprungen).
@@ -14,23 +19,24 @@ Die Pipeline läuft in einem eigenen Docker-Container (`data-preparer`) und wird
 
 ## Skripte
 
-Die Pipeline besteht aus folgenden Python-Skripten:
+Die Pipeline besteht aus folgenden Python-Skripten (Orchestrierung + Provider + Ingest):
 
-*   **`scheduler.py`**: Der Hauptprozess. Er nutzt die `schedule`-Bibliothek, um die Pipeline täglich zu starten. Er führt die anderen Skripte als Subprozesse aus, um eine saubere Speicherverwaltung zu gewährleisten.
-*   **`extract_links.py`**: Lädt `rii-toc.xml` herunter und extrahiert Download-Links nach `data/links.txt`.
-*   **`download_files.py`**: Lädt Dateien aus `data/links.txt` parallel herunter. Beachtet Rate-Limits und Retries.
-*   **`extract_zips.py`**: Entpackt ZIP-Archive aus `data/downloads` nach `data/extracted`.
-*   **`convert_all_to_md.py`**: Konvertiert XML-Dateien zu Markdown (für LLMs) und JSON (für Metadaten). Speichert das Ergebnis im `markdown`-Volume, das mit dem MCP-Server geteilt wird.
-*   **`ingest.py`**: Indiziert die Markdown/JSON-Dateien in der OpenSearch-Instanz.
+*   **`scheduler.py`**: Startet die Pipeline via `schedule`. Nutzt `RUN_ONCE`/`RUN_AT`.
+*   **`run_all.py`**: Führt BGH + States nacheinander aus.
+*   **BGH**: `providers/bgh/bgh_scraper_links.py` → `bgh_scraper_download.py` → `bgh_extractor.py` → `bgh_parser.py` → `ingest/ingest_bgh.py`
+*   **Bundesländer**: `providers/states/api_client.py` → `raw_fetcher.py` → Parser (`bw/by/bb`) → `ingest/ingest_states.py`
 
 ## Datenstruktur (Docker Volumes)
 
-*   `/app/prepare_data/data`: Persistenter Cache für Downloads und extrahierte XMLs. Verhindert unnötiges erneutes Herunterladen.
-*   `/app/mcp/markdown`: Geteiltes Volume mit dem `mcp-server`. Hier landen die fertigen Markdown-Dateien.
+*   `pipeline/providers/bgh/data`: Persistenter Cache für BGH-TOC/Links/ZIP-Downloads (z.B. `downloads/`).
+*   `mcp/data/bgh/raw`: Entpackte BGH-XMLs.
+*   `mcp/data/bgh/markdown`: Konvertierte BGH-Markdown + JSON-Metadaten.
+*   `mcp/data/<state>/raw`: Roh-HTML pro Bundesland (z.B. `bw/raw`).
+*   `mcp/data/<state>/markdown`: Konvertiertes Markdown + JSON-Metadaten pro Bundesland.
 
 ## Konfiguration
 
-Die Konfiguration erfolgt primär über Umgebungsvariablen im `docker-compose.yml`:
+Die Konfiguration erfolgt primär über Umgebungsvariablen im Root-`docker-compose.yml` und über eine `.env` Datei (siehe `.env.example`).
 
 | Variable | Beschreibung | Standard |
 | :--- | :--- | :--- |
@@ -38,6 +44,19 @@ Die Konfiguration erfolgt primär über Umgebungsvariablen im `docker-compose.ym
 | `OPENSEARCH_PORT` | Port des OpenSearch-Servers | `9200` |
 | `OPENSEARCH_USER` | Benutzername | `admin` |
 | `OPENSEARCH_PASSWORD` | Passwort | `ComplexPassword123!` |
+| `WEBSCRAPER_URL` | Basis-URL deines WebScraper-Services (Bundesländer) | - |
+| `WEBSCRAPER_AUTH` | Auth Header/Token für den WebScraper | - |
+| `RUN_ONCE` | Wenn `true`: genau ein Lauf, dann Exit | `false` |
+| `RUN_AT` | Uhrzeit für tägliche Läufe (HH:MM) | `03:00` |
+| `MAX_WORKERS` | Parallelität (Download/Parsing) | abhängig von Skript |
+
+## Ausführung via Docker Compose
+
+Empfohlener One-shot Lauf über das Root-Compose:
+
+```bash
+docker compose --profile pipelinerun up --build data-preparer
+```
 
 ## Manuelle Ausführung
 
@@ -47,11 +66,14 @@ Zum Testen oder für einmalige Läufe können Sie den Scheduler umgehen und Skri
 # In den Container wechseln
 docker exec -it data-preparer bash
 
-# Einzelne Schritte ausführen
-python extract_links.py
-python download_files.py
-python ingest.py
-# usw.
+# Komplettlauf (BGH + Bundesländer)
+python run_all.py
+
+# Nur BGH
+python main_bgh.py
+
+# Nur Bundesländer
+python main_states.py
 ```
 
 ## Bekannte Limitierungen

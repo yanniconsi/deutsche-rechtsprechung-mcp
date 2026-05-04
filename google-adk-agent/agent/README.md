@@ -14,14 +14,19 @@ Der Agent ist so instruiert, dass er:
 5.  Eine fundierte rechtliche Einschätzung auf Basis der gefundenen Rechtsprechung erstellt.
 6.  Komplexe juristische Sachverhalte für Nicht-Juristen verständlich erklärt.
 
-Er verwendet dabei das Modell `gemini-3-pro-preview`.
+Er verwendet dabei das Modell `gemini-3.1-flash-lite-preview` (siehe `agent/agent.py`).
 
 ## Voraussetzungen
 
 *   Python 3.10+
 *   Installiertes `google-adk`
 *   Zugriff auf Google Gemini Modelle (Vertex AI oder AI Studio API Key). Einen API Key kannst du unter [ai.google.dev/gemini-api/docs/api-key](https://ai.google.dev/gemini-api/docs/api-key) erstellen.
-*   Interner oder externer Zugriff auf den konfigurierten MCP-Server (konfigurierbar über die Umgebungsvariable `MCP_URL`, Standard: `http://localhost:8002/mcp`).
+*   Interner oder externer Zugriff auf den konfigurierten MCP-Server (konfigurierbar über die Umgebungsvariable `MCP_URL`).
+
+    - BGH MCP: `http://localhost:8002/mcp`
+    - States MCP: `http://localhost:8004/mcp`
+
+    Hinweis: Wenn du im States-MCP suchst, kannst du (optional) den `states` Parameter nutzen, um die Suche auf bestimmte Bundesländer einzuschränken (z.B. `['bw']`).
 
 ## Installation & Nutzung
 
@@ -33,7 +38,14 @@ Er verwendet dabei das Modell `gemini-3-pro-preview`.
 2.  **Agent starten:**
     ```bash
     export GEMINI_API_KEY=<YOUR_API_KEY_HERE>
-    export MCP_URL=http://localhost:8002/mcp
+    export MCP_URL=http://localhost:8004/mcp
+    adk web
+    ```
+
+    PowerShell (Windows) Beispiel:
+    ```powershell
+    $env:GEMINI_API_KEY = "<YOUR_API_KEY_HERE>"
+    $env:MCP_URL = "http://localhost:8004/mcp"
     adk web
     ```
 
@@ -42,14 +54,14 @@ Er verwendet dabei das Modell `gemini-3-pro-preview`.
 Die Definition des Agenten befindet sich in `agent/agent.py`:
 
 *   **`MCPToolset`**: Verbindet den Agenten mit dem externen MCP-Server.
-*   **`LlmAgent`**: Konfiguriert den Agenten mit Modell (`gemini-3-pro-preview`), Namen und spezifischen Instruktionen (System Prompt).
+*   **`LlmAgent`**: Konfiguriert den Agenten mit Modell (`gemini-3.1-flash-lite-preview`), Namen und spezifischen Instruktionen (System Prompt).
 
 ```python
 # Auszug aus agent/agent.py
 toolset = MCPToolset(connection_params=StreamableHTTPConnectionParams(url='...'))
 
 root_agent = LlmAgent(
-    model="gemini-3-pro-preview",
+    model="gemini-3.1-flash-lite-preview",
     instruction="Du bist Experte für deutsche Rechtsprechung...",
     tools=[toolset],
 )

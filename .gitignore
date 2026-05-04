@@ -2,6 +2,7 @@
 _test/
 .DS_Store
 .adk
+.env
 data/
 _data/
 markdown/

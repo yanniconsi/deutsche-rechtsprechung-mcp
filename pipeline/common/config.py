@@ -31,7 +31,7 @@ def get_state_data_dir(state_code: str, data_type: str = "raw") -> Path:
     return path
 
 # --- 3. OpenSearch Konfiguration ---
-OPENSEARCH_HOST = os.environ.get("OPENSEARCH_HOST", "localhost")
+OPENSEARCH_HOST = os.environ.get("OPENSEARCH_HOST", "opensearch-node1")
 OPENSEARCH_PORT = int(os.environ.get("OPENSEARCH_PORT", 9200))
 OPENSEARCH_USER = os.environ.get("OPENSEARCH_USER", "admin")
 OPENSEARCH_PASSWORD = os.environ.get("OPENSEARCH_PASSWORD", "ComplexPassword123!")

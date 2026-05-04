@@ -61,11 +61,9 @@ def extract_links(xml_file, output_file):
 
 if __name__ == "__main__":
     toc_url = "https://www.rechtsprechung-im-internet.de/rii-toc.xml"
-    toc_file = os.path.join(BGH_DATA_DIR, "rii-toc.xml")
-    links_file = os.path.join(BGH_DATA_DIR, "links.txt")
-
-    # Ensure data directory exists
-    os.makedirs(BGH_DATA_DIR, exist_ok=True)
+    BGH_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    toc_file = str(BGH_DATA_DIR / "rii-toc.xml")
+    links_file = str(BGH_DATA_DIR / "links.txt")
     
     download_toc(toc_url, toc_file)
     extract_links(toc_file, links_file)

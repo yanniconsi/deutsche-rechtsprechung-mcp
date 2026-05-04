@@ -57,7 +57,7 @@ services:
       - OPENSEARCH_PORT=9200
       - OPENSEARCH_USER=admin
       - OPENSEARCH_PASSWORD=ComplexPassword123!
-      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
+      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL:-http://localhost:8003}
     networks:
       - app-network
     ports:
@@ -76,7 +76,7 @@ services:
       - OPENSEARCH_PORT=9200
       - OPENSEARCH_USER=admin
       - OPENSEARCH_PASSWORD=ComplexPassword123!
-      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL}
+      - STATIC_SERVER_EXTERNAL_URL=${STATIC_SERVER_EXTERNAL_URL:-http://localhost:8003}
     networks:
       - app-network
     ports:

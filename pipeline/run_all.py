@@ -1,9 +1,7 @@
-import sys
-import logging
-from loguru import logger 
+from loguru import logger
 
 # Importiere deine Ausführungsfunktionen (wie oben besprochen)
-from main_bgh import run_bgh_pipeline 
+from main_bgh import run_bgh_pipeline
 from main_states import run_states_pipeline
 
 def main():

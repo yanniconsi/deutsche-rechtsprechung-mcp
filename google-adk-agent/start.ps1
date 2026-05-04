@@ -15,8 +15,12 @@ if (Test-Path $envFile) {
     Write-Host "Warning: .env file not found at $envFile" -ForegroundColor Yellow
 }
 
-# MCP URL setzen
-$env:MCP_URL = "http://localhost:8004/mcp"
+# MCP URL setzen (nur wenn nicht bereits gesetzt)
+# - BGH:    http://localhost:8002/mcp
+# - States: http://localhost:8004/mcp
+if (-not $env:MCP_URL) {
+    $env:MCP_URL = "http://localhost:8004/mcp"
+}
 
 Write-Host "Starting ADK Agent from google-adk-agent directory..." -ForegroundColor Cyan
 Write-Host "MCP_URL: $($env:MCP_URL)" -ForegroundColor Gray

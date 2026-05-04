@@ -16,8 +16,16 @@ Der Server läuft in einem Docker-Container und nutzt OpenSearch als Backend fü
 
 ### Funktionen (Tools)
 
-*   `search_decisions(query: str, limit: int)`: Sucht nach Urteilen basierend auf Text, Aktenzeichen oder Normen.
+*   `search_decisions(query: str, states: list[str] | None, limit: int)`: Sucht nach Urteilen basierend auf Text, Aktenzeichen oder Normen.
+    *   `states` ist optional (z.B. `['bw', 'by']`). Der Filter wird standardmäßig nur im **States**-Index angewendet.
 *   `get_decision_by_doknr(doknr: str)`: Ruft den vollständigen Text (Leitsätze, Gründe, Metadaten) eines spezifischen Urteils ab.
+
+Die Tool-Antworten enthalten u.a.:
+
+*   `doknr` (Dokumentnummer)
+*   `source` (relativer Dateipfad im geteilten `mcp/data` Volume)
+*   `url` (klickbarer Volltext-Link über den Static Server)
+*   `resource_uri` (z.B. `decision://<doknr>`)
 
 ### Technologie
 
@@ -28,31 +36,40 @@ Der Server läuft in einem Docker-Container und nutzt OpenSearch als Backend fü
 ### Starten des Servers
 
 ```bash
-cd mcp
-docker-compose up --build
+docker compose up --build
 ```
 
-Der Server ist anschließend unter `http://localhost:8002/mcp` erreichbar. Die Datenbank wird beim ersten Start automatisch initialisiert (siehe `src/ingest.py`).
+BGH MCP: `http://localhost:8002/mcp` • States MCP: `http://localhost:8004/mcp` • Static Server: `http://localhost:8003/health`
+
+Hinweis: Das Root-`docker-compose.yml` ist der empfohlene Einstiegspunkt.
+
+### Beispiele
+
+- Suche in States (mit Filter): `search_decisions("Kündigung Eigenbedarf", states=["bw"], limit=10)`
+- Suche in BGH: `search_decisions("BGH IX ZB 72/08", limit=10)`
+- Volltext: `get_decision_by_doknr("<DOKNR>")`
 
 ## 2. Data Preprocessing
 
-Bevor der Server nützlich ist, müssen Daten ingestiert werden. Die Skripte im Ordner `prepare_data/` kümmern sich um die Beschaffung und Aufbereitung.
+Bevor der Server nützlich ist, müssen Daten ingestiert werden. Dafür gibt es die Pipeline im Ordner `pipeline/`.
+
+Ein einmaliger Lauf (One-shot) über Docker Compose:
+
+```bash
+docker compose --profile pipelinerun up --build data-preparer
+```
 
 *   **Quelle**: [Rechtsprechung im Internet](https://www.rechtsprechung-im-internet.de/) (Open Data).
-*   **Prozess**:
-    1.  Links extrahieren (`extract_links.py`).
-    2.  XML-Daten herunterladen (`download_files.py`).
-    3.  Entpacken (`extract_zips.py`).
-    4.  Konvertierung zu Markdown für optimale LLM-Lesbarkeit (`convert_all_to_md.py`).
+*   **Prozess (high-level)**: Download/Update → Extraktion/Parsing → Markdown/JSON erzeugen → In OpenSearch indizieren.
 
-Detaillierte Anweisungen finden sich in `prepare_data/README.md`.
+Detaillierte Anweisungen finden sich in `pipeline/README.md`.
 
 ## 3. Beispiel-Agent (Google ADK)
 
 Im Ordner `google-adk-agent/` befindet sich ein Referenz-Agent, der zeigt, wie man den MCP-Server in eine Anwendung integriert.
 
 *   **Framework**: Google Agent Development Kit (ADK).
-*   **Modell**: Gemini 2.5 Flash / Gemini 3 Pro Preview.
+*   **Modell**: `gemini-3.1-flash-lite-preview` (in `google-adk-agent/agent/agent.py` konfiguriert).
 *   **Funktion**: Der Agent analysiert Sachverhalte, sucht selbstständig passende Urteile und gibt eine rechtliche Einschätzung ab.
 
 Siehe `google-adk-agent/agent/README.md` für Details zur Einrichtung.
@@ -62,6 +79,8 @@ Siehe `google-adk-agent/agent/README.md` für Details zur Einrichtung.
 *   Docker & Docker Compose
 *   Python 3.10+ (für lokale Entwicklung/Preprocessing)
 *   Zugriff auf Gemini API (für den Agenten)
+
+Für den Pipeline-Lauf (Bundesländer) wird zusätzlich eine `.env` Datei benötigt (Vorlage: `.env.example`).
 
 ## Lizenz
 
