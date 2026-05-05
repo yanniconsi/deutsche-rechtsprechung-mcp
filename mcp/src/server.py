@@ -20,7 +20,7 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-# Dieser Such-Index sollte alle Staaten enthalten (von deinem neuen Ingest-Skript)
+# Defaults to the combined states index.
 INDEX_NAME = os.environ.get('INDEX_NAME', 'court-decisions-states')
 STATIC_SERVER_EXTERNAL_URL = os.environ.get('STATIC_SERVER_EXTERNAL_URL') or 'http://localhost:8003'
 
@@ -46,7 +46,6 @@ def get_opensearch_client():
         ssl_show_warn=False
     )
 
-# --- GEÄNDERT: Neuer Parameter 'states' hinzugefügt ---
 @mcp.tool()
 def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> str:
     """Search for German court decisions by text or metadata.
@@ -60,7 +59,6 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
 
     client = get_opensearch_client()
     
-    # Basis Multi-Match Query (wie bisher)
     base_query = {
         "multi_match": {
             "query": query,
@@ -71,12 +69,9 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
         }
     }
     
-    # --- GEÄNDERT: Bool-Query bauen um Filter zu unterstützen ---
     query_body = {"bool": {"must": base_query}}
     
-    # Wenn das LLM spezifische Staaten übergeben hat, wende den Filter an
     if states and _state_filter_enabled():
-        # Säubere die Eingabe (Kleinschreibung, Leerzeichen entfernen)
         clean_states = [s.strip().lower() for s in states if isinstance(s, str)]
         if clean_states:
             query_body["bool"]["filter"] = {
@@ -107,14 +102,12 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
             datum = source.get('datum', 'N/A')
             gericht = source.get('gericht', 'N/A')
             normen = source.get('normen', 'N/A')
-            # Es hilft dem LLM oft zu wissen, woher das Urteil stammt
             state = source.get('state', 'N/A') 
             source_file = source.get('source_file', 'N/A')
             
             if source_file != 'N/A':
                 source_file = source_file.replace("\\", "/")
             
-            # URL generieren
             decision_url = f"{STATIC_SERVER_EXTERNAL_URL}/decisions/{source_file}" if source_file != 'N/A' else None
             
             # Get highlight if available
@@ -131,7 +124,7 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
                 "normen": normen,
                 "doknr": doknr,
                 "date": datum,
-                "state": state, # NEU: Bundesland im Ergebnis anzeigen
+                "state": state,
                 "score": score,
                 "snippet": snippet,
                 "source": source_file,
@@ -145,12 +138,11 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
         
         result_json = json.dumps(results_list, ensure_ascii=False, indent=2)
         
-        # Quellen mit URLs
         sources_with_urls = [
             f"- [{r['az']}]({r['url']})" if r.get('url') else f"- {r['az']}"
             for r in results_list if r.get('url')
         ]
-        sources_section = "\n\n## Quellen\n" + "\n".join(sources_with_urls) if sources_with_urls else ""
+        sources_section = "\n\n## Sources\n" + "\n".join(sources_with_urls) if sources_with_urls else ""
         
         logger.info(f"Returning {len(results_list)} results for query '{query}'")
         return result_json + sources_section
@@ -192,16 +184,14 @@ def get_decision_by_doknr(doknr: str) -> str:
         if source_file != 'N/A':
             source_file = source_file.replace("\\", "/")
             
-        # URL generieren
         decision_url = f"{STATIC_SERVER_EXTERNAL_URL}/decisions/{source_file}" if source_file != 'N/A' else None
         
         result = json.dumps(source, ensure_ascii=False, indent=2)
         
-        # Quelle mit URL
         if decision_url:
-            result += f"\n\n## Quelle\n- [Volltext ansehen]({decision_url})"
+            result += f"\n\n## Source\n- [View full text]({decision_url})"
         else:
-            result += f"\n\n## Quelle\n- {source_file}"
+            result += f"\n\n## Source\n- {source_file}"
         
         logger.info(f"Returning decision for doknr='{doknr}'")
         return result
@@ -232,19 +222,18 @@ def get_decision_resource(doknr: str) -> str:
     
     source = hits[0]['_source']
     
-    # Format als Markdown für bessere Lesbarkeit
-    markdown = f"""# {source.get('title', 'Ohne Titel')}
+    markdown = f"""# {source.get('title', 'Untitled')}
 
-**Gericht:** {source.get('gericht', 'N/A')}  
-**Aktenzeichen:** {source.get('az', 'N/A')}  
-**Datum:** {source.get('datum', 'N/A')}  
+**Court:** {source.get('gericht', 'N/A')}  
+**Docket:** {source.get('az', 'N/A')}  
+**Date:** {source.get('datum', 'N/A')}  
 **DokNr:** {source.get('doknr', 'N/A')}  
-**Normen:** {source.get('normen', 'N/A')}
+**Norms:** {source.get('normen', 'N/A')}
 
-## Leitsatz
+## Headnote
 {source.get('leitsatz', '')}
 
-## Volltext
+## Full text
 {source.get('full_text', '')}
 """
     return markdown
@@ -252,8 +241,6 @@ def get_decision_resource(doknr: str) -> str:
 @mcp.resource("decision://list")
 def list_decisions_resource() -> list:
     """List available decision resources."""
-    # Optional: Gibt eine Liste verfügbarer Ressourcen zurück
-    # Dies könnte die letzten N Entscheidungen oder alle sein
     return []
 
 if __name__ == "__main__":

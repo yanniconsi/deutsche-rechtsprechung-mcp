@@ -70,7 +70,7 @@ services:
     build: ./mcp
     container_name: mcp-server-states
     environment:
-      # Sucht im neuen, gemeinsamen Index
+      # Search in the combined states index.
       - INDEX_NAME=court-decisions-states
       - OPENSEARCH_HOST=opensearch-node1
       - OPENSEARCH_PORT=9200
@@ -80,7 +80,7 @@ services:
     networks:
       - app-network
     ports:
-      - 8004:8002  # Der Port, unter dem dein LLM diesen Server anspricht
+      - 8004:8002  # Port used by the LLM to reach this server.
     depends_on:
       opensearch-node1:
         condition: service_healthy
@@ -93,10 +93,10 @@ services:
     ports:
       - "8003:8003"
     volumes:
-      # Wir mounten einfach den gesamten data-Ordner (BGH, BW, BY, etc. sind alle hier drin)
+      # Mount the full data directory (BGH, BW, BY, ...).
       - ./mcp/data:/app/mcp/data:ro
     environment:
-      # Wir geben dem Server nur noch das Basis-Verzeichnis mit
+      # Only pass the base directory.
       - BASE_DATA_DIR=/app/mcp/data 
     command: python src/static_server.py
     networks:
@@ -107,12 +107,12 @@ services:
       context: ./pipeline
       dockerfile: Dockerfile
     container_name: data-preparer
-    profiles:          # <-- Das ist der Trick!
+    profiles:          # Enable via --profile pipelinerun.
       - pipelinerun
     env_file:
       - .env
     environment:
-      - RUN_ONCE=true  # Beendet sich, wenn er einmal durchlief
+      - RUN_ONCE=true  # Exit after a single run.
       - MAX_WORKERS=2
     volumes:
       - .:/app

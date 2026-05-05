@@ -1,19 +1,18 @@
 from loguru import logger
 
-# Importiere deine Ausführungsfunktionen (wie oben besprochen)
 from main_bgh import run_bgh_pipeline
 from main_states import run_states_pipeline
 
 def main():
-    logger.info("Starte manuellen Datendownload- und Ingest-Lauf...")
+    logger.info("Starting one-shot ingest run...")
     
-    logger.info("1. Bearbeite BGH")
+    logger.info("Step 1/2: BGH")
     run_bgh_pipeline()
     
-    logger.info("2. Bearbeite Bundesländer")
+    logger.info("Step 2/2: States")
     run_states_pipeline()
 
-    logger.info("Verarbeitung komplett! Skript beendet sich.")
+    logger.info("Done. Exiting.")
 
 if __name__ == "__main__":
     main()

@@ -9,11 +9,11 @@ def extract_metadata_from_html(html_content, filename):
     soup = BeautifulSoup(html_content, 'html.parser')
     metadata = {'doknr': Path(filename).stem}
     
-    # 1. Kopfzeile (Gericht, Typ, Datum, Az)
+    # Header line: court, type, date, docket.
     kopf_div = soup.find('div', class_='col-sm-9', style='font-size:110%')
     if kopf_div and kopf_div.b:
         kopf_text = kopf_div.b.get_text(strip=True)
-        # Bsp: "OLG Nürnberg, Beschluss v. 30.07.2025 – 8 W 1286/25"
+        # Example: "OLG Nürnberg, Beschluss v. 30.07.2025 – 8 W 1286/25"
         match = re.search(r'([^,]+),\s*([^v\.]+)\s*v\.\s*(\d{2}\.\d{2}\.\d{4})\s*–\s*(.*)', kopf_text)
         if match:
             metadata['gericht'] = match.group(1).strip()
@@ -24,31 +24,31 @@ def extract_metadata_from_html(html_content, filename):
             
             metadata['aktenzeichen'] = match.group(4).strip()
     
-    # 2. Titel
+    # Title
     titel = soup.find('h1', class_='titelzeile')
     if titel:
         metadata['title'] = titel.get_text(strip=True)
         
-    # 3. Normenkette (sucht das div nach der Überschrift)
+    # Norms section
     norm_ueber = soup.find('div', class_='rsprboxueber', string=re.compile('Normenkette', re.I))
     if norm_ueber:
         norm_zeile = norm_ueber.find_next_sibling('div', class_='rsprboxzeile')
         if norm_zeile:
             metadata['norm'] = norm_zeile.get_text(strip=True)
             
-    # 4. Leitsätze (können mehrere div.leitsatz sein)
+    # Headnotes
     leitsaetze = soup.find_all('div', class_='leitsatz')
     if leitsaetze:
         metadata['leitsatz'] = " ".join([l.get_text(strip=True) for l in leitsaetze])
         
-    # 5. ECLI (falls vorhanden)
+    # ECLI (optional)
     ecli_ueber = soup.find('div', class_='rsprboxueber', string=re.compile('ECLI', re.I))
     if ecli_ueber:
         ecli_zeile = ecli_ueber.find_next_sibling('div', class_='rsprboxzeile')
         if ecli_zeile:
             metadata['ecli'] = ecli_zeile.get_text(strip=True)
 
-    # 6. Abschnitte sammeln (Tenor, Gründe) - max 500 Zeichen als Preview
+    # Sections (preview only)
     tenor_divs = soup.find_all('div', class_=re.compile(r'absatz\s+tenor'))
     if tenor_divs:
         tenor_text = " ".join([t.get_text(separator=' ', strip=True) for t in tenor_divs])
@@ -61,7 +61,7 @@ def extract_metadata_from_html(html_content, filename):
         
     return metadata
 
-# --- Ausführung ---
+# --- Run ---
 base_output_dir = get_state_data_dir("by", "markdown")
 testdata_dir = get_state_data_dir("by", "raw")
 
@@ -69,7 +69,6 @@ for html_file in testdata_dir.glob('*.html'):
     with open(html_file, 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    # HTML nach Markdown für den eigentlichen Text-Korpus
     markdown_text = md(html_content)
     
     doc_name = html_file.stem
@@ -80,7 +79,6 @@ for html_file in testdata_dir.glob('*.html'):
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(markdown_text)
     
-    # Metadaten aus dem HTML auslesen (robuster)
     metadata = extract_metadata_from_html(html_content, doc_name)
     metadata['source_file'] = html_file.name
     metadata['markdown_file'] = output_file.name

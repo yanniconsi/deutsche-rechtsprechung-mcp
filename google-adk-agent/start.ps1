@@ -1,8 +1,8 @@
-# Im aktuellen Verzeichnis bleiben (google-adk-agent)
+# Keep working directory at google-adk-agent.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $scriptDir
 
-# .env Datei aus dem Root-Verzeichnis laden
+# Load .env from the repository root.
 $envFile = "..\\.env"
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
@@ -15,7 +15,7 @@ if (Test-Path $envFile) {
     Write-Host "Warning: .env file not found at $envFile" -ForegroundColor Yellow
 }
 
-# MCP URL setzen (nur wenn nicht bereits gesetzt)
+# Set MCP URL (only if not already set).
 # - BGH:    http://localhost:8002/mcp
 # - States: http://localhost:8004/mcp
 if (-not $env:MCP_URL) {
@@ -25,5 +25,5 @@ if (-not $env:MCP_URL) {
 Write-Host "Starting ADK Agent from google-adk-agent directory..." -ForegroundColor Cyan
 Write-Host "MCP_URL: $($env:MCP_URL)" -ForegroundColor Gray
 
-# Agent starten (ADK findet automatisch das agent Unterverzeichnis)
+# Start the agent (ADK auto-detects the agent subdirectory).
 adk web

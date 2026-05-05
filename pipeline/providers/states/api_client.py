@@ -25,7 +25,7 @@ class ScraperDataProcessor:
             data = response.json()
 
             if not data:
-                print("Keine Daten erhalten.")
+                print("No data returned.")
                 return pd.DataFrame()
 
             df = pd.json_normalize(data, sep='_')
@@ -33,7 +33,7 @@ class ScraperDataProcessor:
             return df
 
         except Exception as e:
-            print(f"Fehler beim Abruf: {e}")
+            print(f"Fetch failed: {e}")
             return pd.DataFrame()
 
 processor = ScraperDataProcessor()
@@ -44,7 +44,7 @@ if not df.empty:
     existing_cols = [c for c in cols_to_keep if c in df.columns]
     
     if not all(col in existing_cols for col in ['source_name', 'url_url']):
-        print(f"Kritische Spalten fehlen: {df.columns.tolist()}")
+        print(f"Missing required columns: {df.columns.tolist()}")
     else:
         df = df[existing_cols]
         if 'page_contentHtml' in df.columns:
@@ -59,6 +59,6 @@ if not df.empty:
         csv_path = STATES_DATA_DIR / "states_pages_filtered.csv"
 
         df_filtered.to_csv(csv_path, index=False, encoding='utf-8')
-        print(f"{len(df_filtered)} Datensätze in '{csv_path}' gespeichert.")
+        print(f"Wrote {len(df_filtered)} records to '{csv_path}'.")
 else:
-    print("Der DataFrame ist leer.")
+    print("DataFrame is empty.")

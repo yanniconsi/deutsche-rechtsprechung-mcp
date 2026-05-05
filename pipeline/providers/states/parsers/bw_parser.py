@@ -13,7 +13,6 @@ def extract_metadata_from_markdown(md_text, filename):
     """
     metadata = {}
     
-    # Extract doknr from filename
     metadata['doknr'] = Path(filename).stem
     
     # Extract table metadata (Pattern: | **Key:** | Value |)

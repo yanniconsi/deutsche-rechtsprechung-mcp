@@ -1,4 +1,3 @@
-# pipeline/main_states.py
 import subprocess
 import time
 from datetime import datetime
@@ -6,12 +5,12 @@ from loguru import logger
 from pipeline.common.config import PIPELINE_DIR
 
 def run_states_pipeline():
-    logger.info(f"Start States Pipeline at {datetime.now()}")
+    logger.info(f"Starting states pipeline at {datetime.now()}")
     
     scripts = [
         "providers/states/api_client.py",
         "providers/states/raw_fetcher.py",
-        # Da wir alle Bundesländer parsen wollen, rufen wir jeden Parser auf
+        # Parse all supported states.
         "providers/states/parsers/bw_parser.py",
         "providers/states/parsers/by_parser.py",
         "providers/states/parsers/bb_parser.py",
@@ -29,7 +28,7 @@ def run_states_pipeline():
             logger.error(f"Pipeline failed at {script}. Error: {e}")
             return
 
-    logger.info(f"States Pipeline finished successfully at {datetime.now()}")
+    logger.info(f"States pipeline finished successfully at {datetime.now()}")
 
 if __name__ == "__main__":
     while True:

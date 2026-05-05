@@ -11,19 +11,19 @@ def extract_metadata_bb(html_content, md_text, filename):
     soup = BeautifulSoup(html_content, 'html.parser')
     metadata = {'doknr': Path(filename).stem}
     
-    # 1. Titel / Schlagwortkette (steht in <h1 id="header">)
+    # Title (stored in <h1 id="header">)
     header = soup.find('h1', id='header')
     if header:
         metadata['title'] = header.get_text(strip=True)
         
-    # 2. Metadaten-Tabelle parsen (Gericht, Datum, Aktenzeichen, etc.)
+    # Metadata table (court, date, docket, ...)
     table = soup.find('table', class_='bb-table-stripes')
     if table:
         for row in table.find_all('tr'):
             ths = row.find_all('th')
             tds = row.find_all('td')
             
-            # Zeilenstruktur ist meistens z.B. <th>Gericht</th> <td>...</td> <th>Datum</th> <td>...</td>
+            # Typical row: <th>Gericht</th><td>...</td><th>Datum</th><td>...</td>
             if len(ths) == 2 and len(tds) == 2:
                 key1 = ths[0].get_text(strip=True)
                 val1 = tds[0].get_text(strip=True)
@@ -33,14 +33,13 @@ def extract_metadata_bb(html_content, md_text, filename):
                 assign_metadata_bb(metadata, key1, val1)
                 assign_metadata_bb(metadata, key2, val2)
                 
-            # z.B. für colspan="4" wie bei Normen
+            # Single key/value row (e.g. norms).
             elif len(ths) == 1 and len(tds) == 1:
                 key = ths[0].get_text(strip=True)
                 val = tds[0].get_text(strip=True)
                 assign_metadata_bb(metadata, key, val)
 
-    # 3. Abschnitte auslesen (Tenor, Gründe) via Regex aus Markdown
-    # Die <h4> werden in markdownify zu ####
+    # Sections extracted from Markdownified HTML.
     sections = {
         'leitsatz': r'####\s*Leitsatz\s*:?\s*(.*?)(?=####|\Z)', 
         'tenor': r'####\s*Tenor\s*:?\s*(.*?)(?=####|\Z)',
@@ -55,7 +54,7 @@ def extract_metadata_bb(html_content, md_text, filename):
             # Clean up residual HTML comments that markdownify couldn't parse
             content = match.group(1).replace('<!--hlIgnoreOn-->', '').replace('<!--hlIgnoreOff-->', '').strip()
             if content:
-                metadata[section_name] = content[:500]  # Erste 500 Zeichen als Vorschau
+                metadata[section_name] = content[:500]  # First 500 chars preview
                 
     return metadata
 
@@ -80,7 +79,7 @@ def assign_metadata_bb(metadata_dict, key, val):
         metadata_dict['norm'] = val
 
 
-# --- Ausführung ---
+# --- Run ---
 base_output_dir = get_state_data_dir("bb", "markdown")
 testdata_dir = get_state_data_dir("bb", "raw")
 
@@ -88,7 +87,6 @@ for html_file in testdata_dir.glob('*.html'):
     with open(html_file, 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    # Konvertierung nach Markdown
     markdown_text = md(html_content)
     
     doc_name = html_file.stem
@@ -99,7 +97,6 @@ for html_file in testdata_dir.glob('*.html'):
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(markdown_text)
     
-    # Extraktion
     metadata = extract_metadata_bb(html_content, markdown_text, doc_name)
     metadata['source_file'] = html_file.name
     metadata['markdown_file'] = output_file.name

@@ -18,9 +18,9 @@ RUN_AT = os.environ.get("RUN_AT", "03:00")
 
 
 def job():
-    logger.info("Pipeline-Job gestartet")
+    logger.info("Pipeline job started")
     run_once()
-    logger.info("Pipeline-Job fertig")
+    logger.info("Pipeline job finished")
 
 
 if __name__ == "__main__":
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         raise SystemExit(0)
 
     schedule.every().day.at(RUN_AT).do(job)
-    logger.info(f"Scheduler aktiv (täglich um {RUN_AT})")
+    logger.info(f"Scheduler active (daily at {RUN_AT})")
 
     while True:
         schedule.run_pending()

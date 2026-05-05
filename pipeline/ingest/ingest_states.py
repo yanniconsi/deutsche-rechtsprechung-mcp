@@ -1,4 +1,3 @@
-import glob
 import json
 import logging
 import os
@@ -11,12 +10,10 @@ OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'opensearch-node1')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')
 OPENSEARCH_PASSWORD = os.environ.get('OPENSEARCH_PASSWORD', 'ComplexPassword123!')
-# Geändertes Verzeichnis: Geht auf das übergeordnete 'data'-Verzeichnis
 BASE_DATA_DIR = os.environ.get('BASE_DATA_DIR', '../mcp/data')
-# Ein gemeinsamer Index für alle Bundesländer
 INDEX_NAME = 'court-decisions-states'
 
-# Ordner, die bei der Iteration übersprungen werden sollen
+# Directories to skip under BASE_DATA_DIR.
 EXCLUDE_DIRS = ["bgh"]
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -56,7 +53,6 @@ def create_index(client):
                 'doknr': {'type': 'keyword'},
                 'ecli': {'type': 'keyword'},
                 'az': {'type': 'keyword'},
-                # Neu: Das Bundesland als filterbares Feld
                 'state': {'type': 'keyword'}, 
                 'datum': {'type': 'date', 'format': 'basic_date'},
                 'gericht': {'type': 'keyword'},
@@ -88,22 +84,17 @@ def ingest_files(client):
     def generate_actions():
         count = 0
         
-        # Iteriere durch alle Ordner (Länder) in data/
         for root, dirs, files in os.walk(BASE_DATA_DIR):
-            # Hole das Bundeslandkürzel aus dem Pfad (z.B. bw, by)
-            # root ist z.B. '../mcp/data/by/markdown'
             path_parts = os.path.normpath(root).split(os.sep)
             
-            # Suche nach dem Unterordner 'markdown'
             if 'markdown' not in path_parts:
                 continue
                 
-            state = path_parts[path_parts.index("data") + 1] # Extrahiert "bw" aus "data/bw/markdown"
+            state = path_parts[path_parts.index("data") + 1]
             
             if state in EXCLUDE_DIRS:
                 continue
 
-            # Verarbeite nur Markdown-Dateien im aktuellen Ordner
             for file in files:
                 if not file.endswith('.md'):
                     continue
@@ -120,7 +111,7 @@ def ingest_files(client):
                     with open(md_path, 'r', encoding='utf-8') as f:
                         full_text = f.read()
 
-                    # Pfad mit Bundesland-Präfix für statischen Server erstellen
+                    # Used by the static server to build a stable URL.
                     source_file_raw = metadata.get('source_file') or file
                     source_file = f"{state}/{os.path.basename(source_file_raw).replace(chr(92), '/')}"
                     
@@ -130,7 +121,7 @@ def ingest_files(client):
                         'doknr': metadata.get('doknr'),
                         'ecli': metadata.get('ecli'),
                         'az': metadata.get('aktenzeichen'),
-                        'state': state, # Neu: Bundesland eintragen
+                        'state': state,
                         'datum': metadata.get('datum'),
                         'gericht': metadata.get('gericht', ''),
                         'dokumenttyp': metadata.get('dokumenttyp'),
@@ -144,7 +135,7 @@ def ingest_files(client):
                         'gruende': metadata.get('gruende'),
                         'abwmeinung': metadata.get('abwmeinung'),
                         'sonstlt': metadata.get('sonstlt'),
-                        'source_file': source_file # Geändert: "bw/datei.html"
+                        'source_file': source_file
                     }
                     
                     if not doc.get('datum'):

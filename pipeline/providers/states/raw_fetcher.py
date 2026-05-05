@@ -7,7 +7,7 @@ from pipeline.common.config import MCP_DATA_DIR, STATES_DATA_DIR
 df = pd.read_csv(STATES_DATA_DIR / "states_pages_filtered.csv")
 base_data_path = MCP_DATA_DIR
 
-gespeichert_count = 0
+saved_count = 0
 
 for _, row in df.iterrows():
     source = str(row['source_name']).strip().lower()
@@ -35,8 +35,8 @@ for _, row in df.iterrows():
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
-            gespeichert_count += 1
+            saved_count += 1
         except Exception as e:
-            print(f"Fehler bei {doc_id}: {e}")
+            print(f"Failed for {doc_id}: {e}")
 
-print(f"{gespeichert_count} HTML-Dateien unter {base_data_path.resolve()} erstellt.")
+print(f"Wrote {saved_count} HTML files under {base_data_path.resolve()}.")

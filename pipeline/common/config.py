@@ -2,43 +2,35 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Lade Umgebungsvariablen aus der .env Datei
+# Load environment variables from .env (if present).
 load_dotenv()
 
-# --- 1. Basis-Verzeichnisse ---
-# COMMON_DIR = pipeline/common
+# Paths
 COMMON_DIR = Path(__file__).resolve().parent
-# PIPELINE_DIR = pipeline
 PIPELINE_DIR = COMMON_DIR.parent
-# PROJECT_ROOT = Hauptordner (deutsche-rechtsprechung-mcp)
 PROJECT_ROOT = PIPELINE_DIR.parent
 
-# --- 2. Daten-Verzeichnisse ---
-# MCP Verzeichnis für die final aufbereiteten Daten
+# Final data directory mounted/served by MCP.
 MCP_DATA_DIR = PROJECT_ROOT / "mcp" / "data"
 
-# BGH Spezifische Daten (ZIP, XML, Downloads)
+# BGH provider cache (TOC/XML/ZIP downloads).
 BGH_DATA_DIR = PIPELINE_DIR / "providers" / "bgh" / "data"
 
-# States Provider Daten (z.B. Exporte aus einem externen Scraper/DB-Service)
+# States provider intermediate exports (e.g. from an external scraper/DB service).
 STATES_DATA_DIR = PIPELINE_DIR / "providers" / "states" / "data"
 
-# Hilfsfunktion, um Pfade für ein bestimmtes Bundesland zu bekommen
 def get_state_data_dir(state_code: str, data_type: str = "raw") -> Path:
-    """
-    Gibt den Pfad zum Datenordner eines Bundeslands zurück.
-    Beispiel: state_code='bw', data_type='markdown' -> mcp/data/bw/markdown
-    """
+    """Return the data directory for a state (e.g. bw/by/bb)."""
     path = MCP_DATA_DIR / state_code / data_type
     path.mkdir(parents=True, exist_ok=True)
     return path
 
-# --- 3. OpenSearch Konfiguration ---
+# OpenSearch
 OPENSEARCH_HOST = os.environ.get("OPENSEARCH_HOST", "opensearch-node1")
 OPENSEARCH_PORT = int(os.environ.get("OPENSEARCH_PORT", 9200))
 OPENSEARCH_USER = os.environ.get("OPENSEARCH_USER", "admin")
 OPENSEARCH_PASSWORD = os.environ.get("OPENSEARCH_PASSWORD", "ComplexPassword123!")
 
-# --- 4. Scraper API Konfiguration (für Bundesländer) ---
+# Optional: external service used to export HTML for state decisions.
 WEBSCRAPER_URL = os.environ.get("WEBSCRAPER_URL")
 WEBSCRAPER_AUTH = os.environ.get("WEBSCRAPER_AUTH")

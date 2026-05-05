@@ -56,7 +56,7 @@ def create_index(client):
                 'doknr': {'type': 'keyword'},
                 'ecli': {'type': 'keyword'},
                 'az': {'type': 'keyword'},
-                'datum': {'type': 'date', 'format': 'basic_date'}, # 20100114
+                'datum': {'type': 'date', 'format': 'basic_date'},  # e.g. 20100114
                 'gericht': {'type': 'keyword'},
                 'spruchkoerper': {'type': 'keyword'},
                 'normen': {'type': 'text', 'analyzer': 'german'},
@@ -100,9 +100,6 @@ def ingest_files(client):
                 # Load Full Text from Markdown
                 with open(md_path, 'r', encoding='utf-8') as f:
                     full_text = f.read()
-
-
-                # NEW
                 relative_path = os.path.relpath(md_path, MARKDOWN_DIR)
                 
                 doc = {
@@ -123,7 +120,7 @@ def ingest_files(client):
                     'gruende': metadata.get('gruende'),
                     'abwmeinung': metadata.get('abwmeinung'),
                     'sonstlt': metadata.get('sonstlt'),
-                    'source_file': relative_path  # NEU: Relativer Pfad zur Quelldatei
+                    'source_file': relative_path
                 }
                 
                 if not doc.get('datum'):
