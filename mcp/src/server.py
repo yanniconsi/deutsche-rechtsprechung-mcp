@@ -110,7 +110,6 @@ def search_decisions(query: str, states: list[str] = None, limit: int = 10) -> s
             
             decision_url = f"{STATIC_SERVER_EXTERNAL_URL}/decisions/{source_file}" if source_file != 'N/A' else None
             
-            # Get highlight if available
             snippet = ""
             if 'highlight' in hit and 'full_text' in hit['highlight']:
                 snippet = "... " + " ... ".join(hit['highlight']['full_text']) + " ..."

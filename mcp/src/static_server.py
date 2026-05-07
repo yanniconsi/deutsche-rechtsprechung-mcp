@@ -230,7 +230,6 @@ def render_bw_dl(dl_tag):
                 html_parts.append(f'<span class="randnummer">{rd_text}</span>')
         elif child.name == 'dd':
             html_parts.append('<div class="dd-content">')
-            # Nested dl inside dd
             inner_dl = child.find('dl')
             if inner_dl:
                 html_parts.append('<div class="dl-block">')
@@ -239,7 +238,6 @@ def render_bw_dl(dl_tag):
             else:
                 for p in child.find_all('p', recursive=False):
                     html_parts.append(f'<p>{p.get_text()}</p>')
-                # Fallback: plain text if no <p> tags
                 if not child.find('p'):
                     text = child.get_text(strip=True)
                     if text:
@@ -273,7 +271,6 @@ def parse_bw_html_to_html(html_path):
                     if len(cells) >= 2:
                         key = cells[0].get_text(strip=True).rstrip(':')
                         value = cells[1].get_text(strip=True)
-                        # Keep the existing German keys, but skip "Quelle" rows.
                         if key and value and not 'Quelle' in key:
                             html_parts.append(f'<p><strong>{key}:</strong> {value}</p>')
 
@@ -315,7 +312,7 @@ def parse_bw_html_to_html(html_path):
                     if text:
                         html_parts.append(f'<p>{text}</p>')
 
-        if len(html_parts) == 2: # nur `<div class="metadata">` und `</div>`
+        if len(html_parts) == 2:
                html_parts.append('<p><em>Details could not be extracted reliably. Please refer to the original document.</em></p>')
 
         return '\n'.join(html_parts)

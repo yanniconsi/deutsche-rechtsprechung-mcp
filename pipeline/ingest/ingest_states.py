@@ -5,7 +5,6 @@ import time
 
 from opensearchpy import OpenSearch, helpers
 
-# Configuration
 OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'opensearch-node1')
 OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
 OPENSEARCH_USER = os.environ.get('OPENSEARCH_USER', 'admin')

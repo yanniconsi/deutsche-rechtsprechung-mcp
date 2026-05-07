@@ -38,4 +38,4 @@ if __name__ == "__main__":
     while True:
         run_bgh_pipeline()
         logger.info("Sleeping for 24 hours...")
-        time.sleep(86400) # Sleep for 24h
+        time.sleep(86400)

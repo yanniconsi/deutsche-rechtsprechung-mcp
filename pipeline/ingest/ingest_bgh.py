@@ -154,5 +154,4 @@ if __name__ == "__main__":
     client = get_opensearch_client()
     wait_for_opensearch(client)
     create_index(client)
-    # Always run ingest to allow updates
     ingest_files(client)
